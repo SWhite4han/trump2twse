@@ -1,0 +1,54 @@
+- event: "美伊/中東衝突"
+  keywords: 
+    - "iran"
+    - "war"
+    - "conflict"
+    - "military"
+    - "attack"
+    - "missile"
+    - "伊朗"
+    - "戰爭"
+    - "衝突"
+    - "軍事"
+    - "攻擊"
+    - "飛彈"
+    - "中東"
+  impact:
+    direction: "bullish" # 對特定板塊為利多
+    description: "中東地區的軍事衝突通常會刺激全球的國防、石油和黃金市場。"
+    sectors: ["defense", "shipping", "oil", "gold"]
+    stocks:
+      defense: # 國防/軍工股
+        - "8033"  # 漢翔
+        - "2634"  # 亞航
+        - "4556"  # 精剛
+      shipping: # 航運股 (因紅海等區域不穩)
+        - "2603"  # 長榮
+        - "2609"  # 陽明
+      oil: # 石油/塑化股
+        - "1301"  # 台塑
+        - "1303"  # 南亞
+      gold: # 黃金相關ETF
+        - "00635U" # 期元大S&P黃金
+
+- event: "美國對中半導體禁令"
+  keywords: 
+    - "chip ban"
+    - "semiconductor restriction"
+    - "export control"
+    - "entity list"
+    - "禁令"
+    - "制裁"
+    - "晶片法案"
+    - "實體清單"
+  impact:
+    direction: "mixed" # 影響複雜
+    description: "對美國技術依賴度高的中國供應鏈公司可能受創，但台灣的轉單或去美化供應鏈可能受益。"
+    sectors: ["foundry", "ic_design"]
+    stocks:
+      impacted_positive: # 可能有轉單效益
+        - "2330" # 台積電
+        - "2303" # 聯電
+      impacted_negative: # 中國業務佔比較高或供應鏈相關
+        - "3711" # 日月光投控
+        - "2454" # 聯發科 (需觀察高階晶片市場反應)
