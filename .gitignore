@@ -1,0 +1,30 @@
+# 密鑰與環境變數
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 資料與日誌（內容會頻繁變動，不進版控）
+data/
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code 本機設定與記憶（不進版控）
+.claude/
+memory/
+MEMORY.md
