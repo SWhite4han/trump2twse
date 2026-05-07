@@ -5,12 +5,14 @@
 from __future__ import annotations
 
 import csv
+import json
 import subprocess
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
 from scripts.lib.config import config
+from scripts.track_recommendation_performance import MAX_WATCH_DAYS
 
 PERF_STATUS_EMOJI = {
     "triggered_target": "✅ 達標",
@@ -22,12 +24,14 @@ PERF_STATUS_EMOJI = {
 
 
 def run() -> None:
-    rows = _load_all_csv()
-    if not rows:
+    rows      = _load_all_csv()
+    open_pos  = _load_open_positions()
+
+    if not rows and not open_pos:
         print("[report] 尚無績效資料，略過。")
         return
 
-    md = _build_markdown(rows)
+    md = _build_markdown(rows, open_pos)
     out = config.project_root / "PERFORMANCE.md"
     out.write_text(md, encoding="utf-8")
     print(f"[report] → {out}")
@@ -46,7 +50,15 @@ def _load_all_csv() -> list[dict]:
     return rows
 
 
-def _build_markdown(rows: list[dict]) -> str:
+def _load_open_positions() -> list[dict]:
+    f = config.data_dir / "performance" / "open_positions.json"
+    if not f.exists():
+        return []
+    with open(f, encoding="utf-8") as fp:
+        return json.load(fp)
+
+
+def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     triggered = [r for r in rows if r["status"] not in ("not_triggered", "no_data")]
     target_hits = sum(1 for r in triggered if r["status"] == "triggered_target")
@@ -117,6 +129,51 @@ def _build_markdown(rows: list[dict]) -> str:
                 f"| {status} |"
             )
         lines.append("")
+
+    # 持倉中（open positions）
+    holding  = [p for p in open_pos if p.get("state") == "holding"]
+    watching = [p for p in open_pos if p.get("state") == "watching"]
+
+    if holding or watching:
+        lines += ["## 目前持倉", ""]
+        if holding:
+            lines += [
+                f"### 已進場（{len(holding)} 筆）",
+                "",
+                "| 股票 | 規則 | 進場日 | 目標 | 停損 | 現價 |",
+                "|---|---|---|---|---|---|",
+            ]
+            for p in holding:
+                lc = p.get("last_close")
+                lc_str = f"{lc:.1f}" if lc else "—"
+                lines.append(
+                    f"| {p['code']} {p.get('name','')} "
+                    f"| {p.get('rule_id','')} "
+                    f"| {p.get('entry_date','—')} "
+                    f"| {p.get('target','—')} "
+                    f"| {p.get('stop_loss','—')} "
+                    f"| {lc_str} |"
+                )
+            lines.append("")
+        if watching:
+            lines += [
+                f"### 觀察中－等待進場（{len(watching)} 筆）",
+                "",
+                "| 股票 | 規則 | 推薦日 | 進場區間 | 目標 | 停損 | 觀察天數 |",
+                "|---|---|---|---|---|---|---|",
+            ]
+            for p in watching:
+                entry = f"{p.get('entry_low','—')}–{p.get('entry_high','—')}"
+                lines.append(
+                    f"| {p['code']} {p.get('name','')} "
+                    f"| {p.get('rule_id','')} "
+                    f"| {p.get('report_date','—')} "
+                    f"| {entry} "
+                    f"| {p.get('target','—')} "
+                    f"| {p.get('stop_loss','—')} "
+                    f"| {p.get('days_watched',0)}/{MAX_WATCH_DAYS} |"
+                )
+            lines.append("")
 
     lines += [
         "---",
