@@ -3,6 +3,8 @@
 > 台股事件驅動情報追蹤系統  
 > 從 Trump 貼文 + 股癌 Podcast 沿因果鏈推導，每日自動產出 Telegram 買賣建議。
 
+→ [查看開發進度 ROADMAP.md](ROADMAP.md)
+
 ```
 Trump 貼文 ──┐
              ├─→ LLM 事件分類 ─→ 規則匹配 ─→ TWSE 股價 ─→ Telegram 通知
