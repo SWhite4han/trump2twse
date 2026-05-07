@@ -32,7 +32,7 @@
         - "00635U" # 期元大S&P黃金
 
 - event: "美國對中半導體禁令"
-  keywords: 
+  keywords:
     - "chip ban"
     - "semiconductor restriction"
     - "export control"
@@ -52,3 +52,47 @@
       impacted_negative: # 中國業務佔比較高或供應鏈相關
         - "3711" # 日月光投控
         - "2454" # 聯發科 (需觀察高階晶片市場反應)
+
+- event: "Trump全球關稅政策衝擊出口"
+  keywords:
+    - "tariff"
+    - "tariffs"
+    - "關稅"
+    - "trade war"
+    - "Trump trade"
+    - "export"
+    - "出口"
+    - "貿易戰"
+  impact:
+    direction: "bearish"
+    description: "台灣EMS與ODM廠以美國為主要終端市場，關稅提高壓縮品牌客戶訂單與代工利潤。"
+    sectors: ["EMS", "ODM", "electronics"]
+    stocks:
+      EMS:
+        - "2317" # 鴻海
+        - "4938" # 和碩
+        - "3231" # 緯創
+      ODM:
+        - "2382" # 廣達
+        - "3008" # 正成
+      electronics:
+        - "2357" # 華碩
+
+- event: "美國東南亞貿易協商停滯"
+  keywords:
+    - "Southeast Asia"
+    - "trade deal"
+    - "Vietnam"
+    - "東南亞"
+    - "供應鏈轉移"
+    - "關稅豁免"
+    - "越南"
+  impact:
+    direction: "bearish"
+    description: "台廠赴東南亞設廠以規避關稅的策略效益下降，供應鏈重組進程受阻。"
+    sectors: ["EMS", "PCB"]
+    stocks:
+      EMS:
+        - "2317" # 鴻海
+      PCB:
+        - "3034" # 聯詳
