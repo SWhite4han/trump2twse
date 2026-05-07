@@ -79,8 +79,20 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False) -
     # ── Step 8：DISCOVER — 探索新事件規則 ────────────────────────────
     _step_discover_rules(raw_texts, shadow=shadow)
 
+    # ── Step 9：更新 PERFORMANCE.md 並推送 GitHub ─────────────────────
+    _step_update_perf_report()
+
     print(f"\n✅ Pipeline 完成 — {today}{mode_tag}")
     return 0
+
+
+def _step_update_perf_report() -> None:
+    print("[9/9] 更新 PERFORMANCE.md…")
+    try:
+        from scripts.generate_perf_report import run as perf_report_run
+        perf_report_run()
+    except Exception as e:
+        print(f"       PERFORMANCE.md 更新失敗（繼續）：{e}")
 
 
 # --------------------------------------------------------------------------- #

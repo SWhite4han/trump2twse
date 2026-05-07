@@ -3,7 +3,7 @@
 > 台股事件驅動情報追蹤系統  
 > 從 Trump 貼文 + 股癌 Podcast 沿因果鏈推導，每日自動產出 Telegram 買賣建議。
 
-→ [查看開發進度 ROADMAP.md](ROADMAP.md)
+→ [查看開發進度 ROADMAP.md](ROADMAP.md) ｜ [推薦績效 PERFORMANCE.md](PERFORMANCE.md)
 
 ```
 Trump 貼文 ──┐
