@@ -180,3 +180,24 @@
           - '2382'
       last_updated_reason: '2026-05-14: 美國貿易法院（及聯邦法院）多次裁定Trump依IEEPA/Section 122實施的10%全球關稅違法，若裁定確立將導致關稅被取消，直接降低台灣出口商成本壓力，為現有『Trump全球關稅政策衝擊出口』的反向事件，影響方向截然不同，必須獨立追蹤'
       evidence_source: qualitative
+  - event: 美法院封鎖Trump關稅令
+    keywords:
+      - court blocks tariff
+      - 10% tariff struck down
+      - trade superpower
+      - judges
+    impact:
+      direction: bullish
+      description: 關稅若被法院封鎖，台灣對美出口壓力解除，電子/科技出口股受惠
+      sectors:
+        - electronics
+        - semiconductors
+      stocks:
+        electronics:
+          - '2317'
+          - '2382'
+        semiconductors:
+          - '2330'
+      last_updated_reason: '2026-05-14: 多家主流媒體（CNN、Al Jazeera、Financial Post）證實美國法院已裁定阻擋/暫停
+        Trump 10% 全球關稅，動搖關稅政策執行力，屬全新法律風險事件，現有規則僅涵蓋關稅政策本身衝擊而未涵蓋司法逆轉情境'
+      evidence_source: qualitative
