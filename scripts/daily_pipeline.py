@@ -311,7 +311,7 @@ def _direction_to_action(direction: str, sector: str) -> str:
     if direction == "bullish":
         return "觀察買進"
     if direction == "bearish":
-        return "停看等"
+        return "觀察賣出"
     # mixed：依板塊判斷
     positive_sectors = {"defense", "gold", "foundry", "impacted_positive"}
     return "觀察買進" if sector in positive_sectors else "停看等"
@@ -335,6 +335,7 @@ def _step_enrich_prices(recs: list[dict]) -> list[dict]:
             rec["name"] = info.get("name", rec["code"])
             close = info.get("close")
             if close:
+                rec["last_close"] = close
                 # 簡易進出場估算（±3% / ±5%）
                 rec["entry_low"] = round(close * 0.97, 1)
                 rec["entry_high"] = round(close * 1.00, 1)
@@ -396,31 +397,45 @@ def _build_telegram_msg(report: dict, today: str) -> str:
             lines.append("")
 
     recs = report.get("recommendations", [])
-    buy = [r for r in recs if r.get("action") == "觀察買進"]
-    watch = [r for r in recs if r.get("action") != "觀察買進"]
+    buy   = [r for r in recs if r.get("action") == "觀察買進"]
+    sell  = [r for r in recs if r.get("action") == "觀察賣出"]
+    watch = [r for r in recs if r.get("action") == "停看等"]
+
+    def _fmt_rec(r: dict, show_entry: bool = True) -> list[str]:
+        conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
+        out = [f"• {r['code']} {r.get('name', '')}{conf_str}"]
+        if show_entry and r.get("entry_low") and r.get("entry_high"):
+            price_line = f"  進場 {r['entry_low']}-{r['entry_high']}"
+            if r.get("target"):
+                price_line += f"  目標 {r['target']}"
+            if r.get("stop_loss"):
+                price_line += f"  停損 {r['stop_loss']}"
+            out.append(price_line)
+        elif r.get("last_close"):
+            price_line = f"  現價 {r['last_close']}"
+            if r.get("stop_loss"):
+                price_line += f"  停損 {r['stop_loss']}"
+            out.append(price_line)
+        if r.get("rule_id"):
+            out.append(f"  依據：{r['rule_id']}")
+        return out
 
     if buy:
         lines.append("📈 *建議觀察買進*")
         for r in buy[:8]:
-            entry = ""
-            if r.get("entry_low") and r.get("entry_high"):
-                entry = f"  進場 {r['entry_low']}-{r['entry_high']}"
-                if r.get("target"):
-                    entry += f"  目標 {r['target']}"
-                if r.get("stop_loss"):
-                    entry += f"  停損 {r['stop_loss']}"
-            conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
-            lines.append(f"• {r['code']} {r.get('name', '')}{conf_str}")
-            if entry:
-                lines.append(entry)
-            if r.get("rule_id"):
-                lines.append(f"  依據：{r['rule_id']}")
+            lines.extend(_fmt_rec(r, show_entry=True))
+        lines.append("")
+
+    if sell:
+        lines.append("📉 *建議觀察賣出*")
+        for r in sell[:5]:
+            lines.extend(_fmt_rec(r, show_entry=False))
         lines.append("")
 
     if watch:
-        lines.append("📉 *建議停看等*")
+        lines.append("⏸ *停看等*")
         for r in watch[:5]:
-            lines.append(f"• {r['code']} {r.get('name', '')}  依據：{r.get('rule_id', '')}")
+            lines.extend(_fmt_rec(r, show_entry=False))
         lines.append("")
 
     if not buy and not watch:
