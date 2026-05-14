@@ -1,0 +1,10 @@
+sources:
+  gua_cancer:
+    trust: high      # 股癌直接點名個股，信心≥0.80 原則上自動接受
+    label: 股癌Podcast
+    prefix: "股癌EP" # raw_texts 前綴識別用
+
+  trump_news:
+    trust: medium    # 宏觀推導，需有具體機制與明確股票代碼才接受
+    label: Trump新聞
+    prefix: ""       # [MM/DD] 格式，非股癌前綴即歸此來源

@@ -97,6 +97,10 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 9：更新 PERFORMANCE.md 並推送 GitHub ─────────────────────
     _step_update_perf_report()
 
+    # ── Step 10：自動審閱 shadow 提案 ────────────────────────────────
+    if not dry_run:
+        _step_auto_review_proposals()
+
     print(f"\n✅ Pipeline 完成 — {today}{mode_tag}")
     return 0
 
@@ -631,6 +635,9 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
         combined = "\n\n---\n".join(gua_texts + trump_texts[:8])
         prompt = (
             "你是一位台股事件規則分析師。請從以下新聞文字中，找出「現有規則庫尚未涵蓋」的全新事件模式。\n\n"
+            "文字來源說明（用於填寫 source_names 欄位）：\n"
+            "- 前綴 [股癌EP...] 的文字來自 gua_cancer\n"
+            "- 前綴 [MM/DD] 的文字來自 trump_news\n\n"
             "現有規則庫與已提案事件（不要重複提議）：\n"
             f"{json.dumps(existing_events, ensure_ascii=False)}\n\n"
             "要求：\n"
@@ -643,6 +650,7 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
             '[\n'
             '  {\n'
             '    "event": "事件名稱",\n'
+            '    "source_names": ["gua_cancer"],\n'
             '    "reason": "為何值得追蹤",\n'
             '    "confidence": 0.85,\n'
             '    "impact": {\n'
@@ -692,6 +700,7 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
             updates.append({
                 "operation": "DISCOVER",
                 "event": event_name,
+                "source_names": item.get("source_names", []),
                 "reason": item.get("reason", ""),
                 "evidence_source": "qualitative",
                 "confidence": item.get("confidence", 0.8),
@@ -717,6 +726,132 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
 
     except Exception as e:
         print(f"       DISCOVER 步驟失敗（繼續）：{e}")
+
+
+# --------------------------------------------------------------------------- #
+# Step 10：自動審閱 shadow 提案
+# --------------------------------------------------------------------------- #
+
+def _load_source_trust() -> dict:
+    """讀取 source_trust.yml，回傳 {source_name: trust_level}。"""
+    trust_file = Path(__file__).parent / "source_trust.yml"
+    if not trust_file.exists():
+        return {}
+    from ruamel.yaml import YAML as _YAML
+    _y = _YAML()
+    with open(trust_file, encoding="utf-8") as f:
+        data = _y.load(f) or {}
+    return {k: v.get("trust", "low") for k, v in data.get("sources", {}).items()}
+
+
+def _step_auto_review_proposals() -> None:
+    """依 source_trust.yml 自動審閱 shadow 提案，approve 寫入 YAML，reject 記錄到 _reviewed.json。"""
+    print("[10] 自動審閱 shadow 提案…")
+    try:
+        from scripts.review_shadow_proposals import _load_all_proposals, _load_reviewed, _save_reviewed
+        from scripts.auto_update_rules import apply_updates
+
+        trust_map = _load_source_trust()
+        all_proposals = _load_all_proposals()
+        reviewed = _load_reviewed()
+
+        # 去重：同名事件只取最新一筆
+        seen: dict[str, dict] = {}
+        for p in all_proposals:
+            seen[p["event"]] = p
+        pending = [p for p in seen.values() if p["event"] not in reviewed]
+
+        if not pending:
+            print("       無待審提案。")
+            return
+
+        print(f"       待審 {len(pending)} 筆，開始判斷…")
+
+        fast_approve, fast_reject, need_llm = [], [], []
+
+        for p in pending:
+            conf = p.get("confidence", 0)
+            sources = p.get("source_names", [])
+            has_stocks = bool(p.get("new_event", {}).get("impact", {}).get("stocks"))
+
+            # 快速拒絕：信心過低
+            if conf < 0.75:
+                fast_reject.append(p)
+                continue
+
+            # 快速接受：全部來源都是 high trust + 信心夠 + 有具體股票
+            source_trusts = [trust_map.get(s, "low") for s in sources] if sources else ["low"]
+            if all(t == "high" for t in source_trusts) and conf >= 0.85 and has_stocks:
+                fast_approve.append(p)
+                continue
+
+            need_llm.append(p)
+
+        # 處理快速結果
+        for p in fast_approve:
+            print(f"       ✅ 自動接受（high trust + conf {p['confidence']:.2f}）：{p['event']}")
+            apply_updates([p], shadow=False)
+            _save_reviewed(p["event"], status="auto_approved")
+
+        for p in fast_reject:
+            print(f"       ❌ 自動拒絕（conf {p['confidence']:.2f} < 0.75）：{p['event']}")
+            _save_reviewed(p["event"], status="auto_rejected")
+
+        # LLM 批次審閱剩餘提案
+        if need_llm:
+            trust_desc = "\n".join(
+                f"- {k}: {'HIGH → 信心≥0.80 即接受' if v == 'high' else 'MEDIUM → 需強力佐證' if v == 'medium' else 'LOW → 不自動接受'}"
+                for k, v in trust_map.items()
+            )
+            existing_rules = _load_rules_summary()
+            proposal_lines = []
+            for i, p in enumerate(need_llm, 1):
+                stocks = p.get("new_event", {}).get("impact", {}).get("stocks", {})
+                src = p.get("source_names", ["未知"])
+                proposal_lines.append(
+                    f"[{i}] event: \"{p['event']}\", sources: {src}, "
+                    f"confidence: {p.get('confidence', 0):.2f}, stocks: {stocks}\n"
+                    f"    reason: \"{p.get('reason', '')[:100]}\""
+                )
+            prompt = (
+                "你是台股事件規則審閱員。以下是 DISCOVER 機制提議的新規則，請逐一決定是否加入規則庫。\n\n"
+                f"來源信任度：\n{trust_desc}\n\n"
+                f"現有規則庫（不要重複接受）：{json.dumps(existing_rules, ensure_ascii=False)}\n\n"
+                "待審提案：\n" + "\n".join(proposal_lines) + "\n\n"
+                "只輸出 JSON 陣列，不要說明文字：\n"
+                '[{"event": "...", "decision": "approve", "reason": "一句話"}]'
+            )
+            try:
+                from scripts.llm_client import analyze
+                raw = analyze(prompt)
+                import re
+                m = re.search(r"\[.*\]", raw, re.DOTALL)
+                if m:
+                    decisions = json.loads(m.group())
+                    dec_map = {d["event"]: d for d in decisions if "event" in d}
+                    for p in need_llm:
+                        dec = dec_map.get(p["event"])
+                        if dec and dec.get("decision") == "approve":
+                            print(f"       ✅ LLM 接受：{p['event']}（{dec.get('reason', '')}）")
+                            apply_updates([p], shadow=False)
+                            _save_reviewed(p["event"], status="llm_approved")
+                        else:
+                            reason = dec.get("reason", "") if dec else "LLM 未回傳決定"
+                            print(f"       ❌ LLM 拒絕：{p['event']}（{reason}）")
+                            _save_reviewed(p["event"], status="llm_rejected")
+                else:
+                    print("       LLM 未回傳 JSON，跳過 LLM 審閱。")
+            except Exception as e:
+                print(f"       LLM 審閱失敗（繼續）：{e}")
+
+        total_approved = len(fast_approve) + sum(
+            1 for p in need_llm
+            if (config.data_dir / "shadow_updates" / "_reviewed.json").exists()
+        )
+        print(f"       完成：接受 {len(fast_approve)} 筆（快速）+ LLM 審閱 {len(need_llm)} 筆")
+
+    except Exception as e:
+        print(f"       自動審閱失敗（繼續）：{e}")
 
 
 # --------------------------------------------------------------------------- #
