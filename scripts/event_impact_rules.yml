@@ -157,3 +157,26 @@
       stocks: {}
       last_updated_reason: '2026-05-14: 多篇報導（EUobserver、politico.eu、歐洲議會）同步指出歐盟與Trump關稅談判瀕臨破裂，EU-US相互報復關稅風險升高，與現有規則中的東南亞僵局屬不同地緣軸線，對台灣出口歐洲的電子與機械廠商形成獨立風險敞口'
       evidence_source: qualitative
+  - event: 美法院裁定Trump全球關稅違法
+    keywords:
+      - trade court
+      - 10% global tariff illegal
+      - Section 122
+      - IEEPA
+      - 關稅違法
+      - 裁定撤銷
+    impact:
+      direction: bullish
+      description: 關稅違法裁定若上訴維持，台灣電子/半導體出口商成本壓力解除，訂單能見度回升
+      sectors:
+        - semiconductors
+        - electronics
+        - servers
+      stocks:
+        semiconductors:
+          - '2330'
+        electronics:
+          - '2317'
+          - '2382'
+      last_updated_reason: '2026-05-14: 美國貿易法院（及聯邦法院）多次裁定Trump依IEEPA/Section 122實施的10%全球關稅違法，若裁定確立將導致關稅被取消，直接降低台灣出口商成本壓力，為現有『Trump全球關稅政策衝擊出口』的反向事件，影響方向截然不同，必須獨立追蹤'
+      evidence_source: qualitative
