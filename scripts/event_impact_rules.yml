@@ -338,3 +338,22 @@
       last_updated_reason: '2026-05-14: Panasonic停止OS-CON固態電容生產，Nippon Chemi-Con承接但產能不足已發起漲價，屬供給側結構性收縮，不同於Vera
         Rubin需求面驅動的MLCC短缺'
       evidence_source: qualitative
+  - event: 消費IC恐慌補庫存推升成熟製程稼動
+    keywords:
+      - 補庫存
+      - DDIC
+      - 成熟製程
+      - 世界先進
+      - 稼動率
+      - 漲價包產能
+    impact:
+      direction: bullish
+      description: 恐慌性補庫存拉升成熟製程晶圓廠稼動率與ASP，短期帶動獲利
+      sectors:
+        - foundry
+        - ic_design
+      stocks:
+        foundry:
+          - '5347'
+      last_updated_reason: '2026-05-14: 晶圓代工漲價預期引發下游DDIC/筆電廠商恐慌性提前拉貨，非終端需求復甦，世界先進新廠產能已全數被包，屬需求驅動漲價性質'
+      evidence_source: qualitative
