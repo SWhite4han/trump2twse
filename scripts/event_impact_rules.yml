@@ -357,3 +357,26 @@
           - '5347'
       last_updated_reason: '2026-05-14: 晶圓代工漲價預期引發下游DDIC/筆電廠商恐慌性提前拉貨，非終端需求復甦，世界先進新廠產能已全數被包，屬需求驅動漲價性質'
       evidence_source: qualitative
+  - event: 被動元件全品類漲價聯動擴散
+    keywords:
+      - 鉭電容
+      - 電感
+      - 電阻
+      - 標準品漲價
+      - 全品類
+      - Vishay
+      - VPG
+      - Nichicon
+    impact:
+      direction: bullish
+      description: 漲價由高階MLCC向下擴散至標準品與電感電阻，低基期標準品需求彈性低，量價齊揚空間大
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '2472'
+      last_updated_reason: '2026-05-14: EP660明確指出不只MLCC，陶瓷電容、鉭電容、鋁電容、電感、電阻全品類均已啟動漲價，現有規則僅覆蓋MLCC（Vera
+        Rubin）與鋁電容（日系退出）兩條線，缺少全品類聯動擴散這一階段性事件'
+      evidence_source: qualitative
