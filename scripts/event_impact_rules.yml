@@ -399,3 +399,22 @@
           - '5347'
       last_updated_reason: '2026-05-14: EP660提到世界先進新建廠房產能已全數售罄並取得台積電技轉，且有海外客戶主動開高價求包產能卻遭拒簽約，顯示賣方議價力極強；現有規則僅涵蓋「消費IC恐慌補庫存推升稼動」，未覆蓋新廠需求驅動型漲價議題'
       evidence_source: qualitative
+  - event: 矽晶圓業者全球同步轉強
+    keywords:
+      - 矽晶圓
+      - 環球晶
+      - 晶圓轉強
+      - 半導體週期
+      - 上游復甦
+    impact:
+      direction: bullish
+      description: 上游矽晶圓滿載反映晶圓代工排程拉長，帶動台灣矽晶圓廠訂單能見度與 ASP 同步回升
+      sectors:
+        - silicon_wafer
+      stocks:
+        silicon_wafer:
+          - '6488'
+          - '6182'
+          - '3016'
+      last_updated_reason: '2026-05-14: EP660 明確指出全球矽晶圓業者股價同步轉強，是半導體週期上行由下游（被動元件、先進封裝）擴散至上游的先行訊號；現有規則庫尚無上游矽晶圓維度的追蹤規則，可補充判斷半導體復甦的廣度與深度'
+      evidence_source: qualitative
