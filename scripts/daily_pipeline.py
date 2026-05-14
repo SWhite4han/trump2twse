@@ -16,6 +16,7 @@
     python scripts/daily_pipeline.py --dry-run       # 只印不推送 Telegram
     python scripts/daily_pipeline.py --shadow        # Phase 6 影子模式：規則更新只記錄不寫入
     python scripts/daily_pipeline.py --date 2026-05-08  # 補跑指定日期
+    python scripts/daily_pipeline.py --fetch-only       # 只抓資料（週末排程用）
 """
 from __future__ import annotations
 
@@ -41,7 +42,7 @@ from scripts.lib.twse_client import get_prices, format_price_line
 # --------------------------------------------------------------------------- #
 
 def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
-        date_str: str | None = None) -> int:
+        date_str: str | None = None, fetch_only: bool = False) -> int:
     if date_str:
         _dt = datetime.strptime(date_str, "%Y-%m-%d")
         today = date_str
@@ -57,9 +58,13 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 1：擷取資料 ──────────────────────────────────────────────
     raw_texts: list[str] = []
     if not skip_fetch:
-        raw_texts = _step_fetch()
+        raw_texts = _step_fetch(date_str=today)
     else:
         print("[1/8] 略過擷取（--skip-fetch）")
+
+    if fetch_only:
+        print(f"\n✅ --fetch-only 完成 — {today}")
+        return 0
 
     # ── Step 2：LLM 事件分類 ─────────────────────────────────────────
     matched_events = _step_classify(raw_texts)
@@ -106,14 +111,15 @@ def _step_update_perf_report() -> None:
 # Step 1：擷取
 # --------------------------------------------------------------------------- #
 
-def _step_fetch() -> list[str]:
+def _step_fetch(date_str: str | None = None) -> list[str]:
     print("[1/8] 擷取 Trump 貼文 & 股癌筆記…")
-    texts: list[str] = []
+    trump_texts: list[str] = []
+    gua_texts: list[str] = []
 
     try:
         from scripts.sources.trump_twitter import fetch as fetch_trump
         from email.utils import parsedate_to_datetime
-        posts = fetch_trump(save=True)
+        posts = fetch_trump(save=True, date=date_str)
         for p in posts:
             date_prefix = ""
             if p.get("published_at"):
@@ -124,25 +130,26 @@ def _step_fetch() -> list[str]:
                     pass
             text = p.get("text", "").strip()
             if text:
-                texts.append(f"{date_prefix}{text}")
+                trump_texts.append(f"{date_prefix}{text}")
         print(f"       Trump：{len(posts)} 則")
     except Exception as e:
         print(f"       Trump 擷取失敗（繼續）：{e}")
 
     try:
         from scripts.sources.gua_cancer import fetch as fetch_gua
-        notes = fetch_gua(save=True)
+        notes = fetch_gua(save=True, date=date_str)
         for n in notes:
             ep = n.get("episode", "")
             ep_prefix = f"[股癌EP{ep}] " if ep else ""
             content = n.get("content", "").strip()
             if content:
-                texts.append(f"{ep_prefix}{content}")
+                gua_texts.append(f"{ep_prefix}{content}")
         print(f"       股癌：{len(notes)} 集")
     except Exception as e:
         print(f"       股癌擷取失敗（繼續）：{e}")
 
-    return [t for t in texts if t.strip()]
+    # 股癌優先（含完整選股分析），Trump 取前 30 則（macro 事件）
+    return [t for t in gua_texts + trump_texts[:30] if t.strip()]
 
 
 # --------------------------------------------------------------------------- #
@@ -158,9 +165,15 @@ def _step_classify(texts: list[str]) -> list[dict]:
     try:
         from scripts.llm_client import analyze
         rules = _load_rules_summary()
-        combined = "\n\n---\n".join(texts[:10])  # 最多 10 段，節省 token
+        # 股癌排前面（完整），Trump 取前 8 則（macro 事件）
+        gua_texts = [t for t in texts if t.startswith("[股癌")]
+        trump_texts = [t for t in texts if not t.startswith("[股癌")]
+        combined = "\n\n---\n".join(gua_texts + trump_texts[:8])
         prompt = (
-            "你是一位台股分析師助理。請從以下文字中，辨識出任何可能對台股造成影響的重要市場事件。\n"
+            "你是一位台股分析師助理。請從以下文字中，辨識出任何可能對台股造成影響的重要市場事件。\n\n"
+            "文字來源說明：\n"
+            "- [股癌EPxxx] 開頭：股癌 Podcast 筆記，包含具體個股選股邏輯、產業趨勢分析，請從中提取具體事件（例如：被動元件缺料、特定族群啟動）\n"
+            "- [MM/DD] 開頭：Trump 相關新聞，關注宏觀政策事件（關稅、貿易戰等）\n\n"
             "對每個偵測到的事件，回傳 JSON 陣列，格式如下：\n"
             '[{"event": "事件名稱（若與規則庫事件相符請使用完全相同名稱；若為新事件請自行命名，15字以內）", '
             '"confidence": 0.0~1.0, "direction": "bullish|bearish|mixed", '
@@ -463,7 +476,9 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
         existing_events = _load_rules_summary()
         # 加入 shadow_updates 已提案的事件，避免每天重複提議相同的規則
         existing_events = existing_events + _load_shadow_proposed_events(today=today)
-        combined = "\n\n---\n".join(raw_texts[:10])
+        gua_texts = [t for t in raw_texts if t.startswith("[股癌")]
+        trump_texts = [t for t in raw_texts if not t.startswith("[股癌")]
+        combined = "\n\n---\n".join(gua_texts + trump_texts[:8])
         prompt = (
             "你是一位台股事件規則分析師。請從以下新聞文字中，找出「現有規則庫尚未涵蓋」的全新事件模式。\n\n"
             "現有規則庫與已提案事件（不要重複提議）：\n"
@@ -572,6 +587,7 @@ def _parse_args() -> argparse.Namespace:
         metavar="YYYY-MM-DD",
         help="補跑指定日期（預設今天）",
     )
+    parser.add_argument("--fetch-only", action="store_true", help="只擷取原始資料，不分析不推送（週末用）")
     return parser.parse_args()
 
 
@@ -579,7 +595,7 @@ if __name__ == "__main__":
     args = _parse_args()
     try:
         code = run(skip_fetch=args.skip_fetch, dry_run=args.dry_run, shadow=args.shadow,
-                   date_str=args.date)
+                   date_str=args.date, fetch_only=args.fetch_only)
     except Exception:
         traceback.print_exc()
         try:

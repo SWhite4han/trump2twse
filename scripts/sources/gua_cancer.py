@@ -32,7 +32,7 @@ _NOTE_PATH = "/notes-of-gooaye-ep-{ep}/"
 # 公開介面
 # --------------------------------------------------------------------------- #
 
-def fetch(save: bool = True) -> list[dict]:
+def fetch(save: bool = True, date: str | None = None) -> list[dict]:
     """擷取最新的股癌筆記。
 
     Returns:
@@ -53,7 +53,7 @@ def fetch(save: bool = True) -> list[dict]:
         time.sleep(1)
 
     if save and notes:
-        _save(notes)
+        _save(notes, date=date)
     return notes
 
 
@@ -162,8 +162,8 @@ def _get_content(soup: BeautifulSoup) -> str:
 # 存檔
 # --------------------------------------------------------------------------- #
 
-def _save(notes: list[dict]) -> Path:
-    today = datetime.now().strftime("%Y-%m-%d")
+def _save(notes: list[dict], date: str | None = None) -> Path:
+    today = date or datetime.now().strftime("%Y-%m-%d")
     out_dir = config.data_dir / "raw" / "gua_cancer"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{today}.json"

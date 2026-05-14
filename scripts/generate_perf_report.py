@@ -60,9 +60,9 @@ def _load_open_positions() -> list[dict]:
 
 def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    triggered = [r for r in rows if r["status"] not in ("not_triggered", "no_data")]
-    target_hits = sum(1 for r in triggered if r["status"] == "triggered_target")
-    stop_hits   = sum(1 for r in triggered if r["status"] == "triggered_stop")
+    triggered = [r for r in rows if r["close_reason"] not in ("not_triggered", "no_data")]
+    target_hits = sum(1 for r in triggered if r["close_reason"] == "triggered_target")
+    stop_hits   = sum(1 for r in triggered if r["close_reason"] == "triggered_stop")
 
     days = sorted({r["report_date"] for r in rows})
     hit_rate  = f"{target_hits/len(triggered)*100:.0f}%" if triggered else "—"
@@ -98,9 +98,9 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
             "|---|---|---|---|---|---|",
         ]
         for rule, recs in sorted(by_rule.items(), key=lambda x: -len(x[1])):
-            t = sum(1 for r in recs if r["status"] == "triggered_target")
-            s = sum(1 for r in recs if r["status"] == "triggered_stop")
-            h = sum(1 for r in recs if r["status"] == "triggered_hold")
+            t = sum(1 for r in recs if r["close_reason"] == "triggered_target")
+            s = sum(1 for r in recs if r["close_reason"] == "triggered_stop")
+            h = sum(1 for r in recs if r["close_reason"] == "triggered_hold")
             rate = f"{t/len(recs)*100:.0f}%" if recs else "—"
             lines.append(f"| {rule} | {len(recs)} | {t} | {s} | {h} | {rate} |")
         lines.append("")
@@ -117,7 +117,7 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         for r in recent:
             entry = f"{r.get('entry_low','—')}–{r.get('entry_high','—')}"
             close = r.get("actual_close") or "—"
-            status = PERF_STATUS_EMOJI.get(r.get("status",""), r.get("status_label",""))
+            status = PERF_STATUS_EMOJI.get(r.get("close_reason",""), r.get("status_label",""))
             lines.append(
                 f"| {r.get('report_date','')} "
                 f"| {r.get('code','')} {r.get('name','')} "

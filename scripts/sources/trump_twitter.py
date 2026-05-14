@@ -44,10 +44,10 @@ _TIMEOUT = 20
 # 公開介面
 # --------------------------------------------------------------------------- #
 
-def fetch(save: bool = True) -> list[dict]:
+def fetch(save: bool = True, date: str | None = None) -> list[dict]:
     posts = _try_rss() or _try_google_news() or _try_ddgs_fallback()
     if save and posts:
-        _save(posts)
+        _save(posts, date=date)
     return posts
 
 
@@ -193,8 +193,8 @@ def _try_ddgs_fallback() -> list[dict]:
 # 存檔
 # --------------------------------------------------------------------------- #
 
-def _save(posts: list[dict]) -> Path:
-    today = datetime.now().strftime("%Y-%m-%d")
+def _save(posts: list[dict], date: str | None = None) -> Path:
+    today = date or datetime.now().strftime("%Y-%m-%d")
     out_dir = config.data_dir / "raw" / "trump"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{today}.json"
