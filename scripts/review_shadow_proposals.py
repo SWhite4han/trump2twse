@@ -74,11 +74,23 @@ def _validate_stocks(new_event: dict) -> dict[str, str]:
     try:
         from scripts.lib.twse_client import get_prices
         results = get_prices(all_codes)
-        return {
+        validation = {
             code: ("ok" if info is not None else "not_found")
             for code, info in results.items()
         }
-    except Exception as e:
+        # TWSE 查不到的代碼，嘗試上櫃（TPEx）.TWO
+        not_found = [c for c, s in validation.items() if s == "not_found"]
+        if not_found:
+            try:
+                import yfinance as yf
+                for code in not_found:
+                    h = yf.Ticker(f"{code}.TWO").history(period="5d", auto_adjust=True)
+                    if not h.empty:
+                        validation[code] = "ok"
+            except Exception:
+                pass
+        return validation
+    except Exception:
         return {code: "api_unavailable" for code in all_codes}
 
 

@@ -6,3 +6,4 @@ lxml>=5.0.0
 pytz>=2024.1
 anthropic>=0.34.0
 duckduckgo-search>=6.0.0
+yfinance>=0.2.0

@@ -72,8 +72,11 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 3：規則匹配 → 建議清單 ──────────────────────────────────
     recommendations = _step_match_rules(matched_events)
 
-    # ── Step 4：補齊股價 ─────────────────────────────────────────────
+    # ── Step 4：補齊股價（TWSE 今日收盤 + ±3/5% 預設值）────────────────
     recommendations = _step_enrich_prices(recommendations)
+
+    # ── Step 4.5：技術面分析（yfinance MA/RSI + batch LLM）─────────────
+    recommendations = _step_enrich_ta(recommendations)
 
     # ── Step 5：儲存日報 ─────────────────────────────────────────────
     report = _step_save_report(recommendations, matched_events, today_compact)
@@ -326,21 +329,147 @@ def _step_enrich_prices(recs: list[dict]) -> list[dict]:
     if not recs:
         return []
 
-    codes = [r["code"] for r in recs]
-    prices = get_prices(codes)
+    try:
+        codes = [r["code"] for r in recs]
+        prices = get_prices(codes)
+        for rec in recs:
+            info = prices.get(rec["code"])
+            if info:
+                rec["name"] = info.get("name", rec["code"])
+                close = info.get("close")
+                if close:
+                    rec["last_close"] = close
+                    rec["entry_low"] = round(close * 0.97, 1)
+                    rec["entry_high"] = round(close * 1.00, 1)
+                    rec["target"] = round(close * 1.05, 1)
+                    rec["stop_loss"] = round(close * 0.95, 1)
+    except Exception as e:
+        print(f"       TWSE 股價查詢失敗（繼續）：{e}")
 
+    return recs
+
+
+# --------------------------------------------------------------------------- #
+# Step 4.5：技術面分析（yfinance + batch LLM）
+# --------------------------------------------------------------------------- #
+
+def _compute_ta(hist, current_close: float | None = None) -> dict:
+    """計算技術指標，current_close 優先用 TWSE 今日收盤（比 yfinance 早一天）。"""
+    import math
+    close = hist["Close"]
+    high  = hist["High"]
+    low   = hist["Low"]
+
+    def r(x):
+        try:
+            v = float(x)
+            return None if math.isnan(v) else round(v, 1)
+        except Exception:
+            return None
+
+    ma5  = r(close.rolling(5).mean().iloc[-1])
+    ma20 = r(close.rolling(20).mean().iloc[-1])
+    ma60 = r(close.rolling(60).mean().iloc[-1]) if len(close) >= 60 else None
+    high20 = r(high.rolling(20).max().iloc[-1])
+    low20  = r(low.rolling(20).min().iloc[-1])
+
+    # RSI(14)
+    delta = close.diff()
+    avg_gain = delta.clip(lower=0).rolling(14).mean().iloc[-1]
+    avg_loss = (-delta.clip(upper=0)).rolling(14).mean().iloc[-1]
+    if avg_loss and avg_loss != 0:
+        rs = avg_gain / avg_loss
+        rsi = r(100 - 100 / (1 + rs))
+    else:
+        rsi = 100.0
+
+    return {
+        "close": current_close or r(close.iloc[-1]),
+        "ma5": ma5, "ma20": ma20, "ma60": ma60,
+        "high20": high20, "low20": low20, "rsi": rsi,
+    }
+
+
+def _step_enrich_ta(recs: list[dict]) -> list[dict]:
+    """yfinance 拉歷史 OHLCV → 計算 TA → 一次 LLM call → 覆寫 entry/target/stop/reason。"""
+    if not recs:
+        return recs
+    print("[4.5] 技術面分析（yfinance + LLM）…")
+
+    try:
+        import yfinance as yf
+    except ImportError:
+        print("       yfinance 未安裝，略過。")
+        return recs
+
+    # 每支股票抓歷史資料
+    ta_map: dict[str, dict] = {}
     for rec in recs:
-        info = prices.get(rec["code"])
-        if info:
-            rec["name"] = info.get("name", rec["code"])
-            close = info.get("close")
-            if close:
-                rec["last_close"] = close
-                # 簡易進出場估算（±3% / ±5%）
-                rec["entry_low"] = round(close * 0.97, 1)
-                rec["entry_high"] = round(close * 1.00, 1)
-                rec["target"] = round(close * 1.05, 1)
-                rec["stop_loss"] = round(close * 0.95, 1)
+        code = rec["code"]
+        current_close = rec.get("last_close")
+        for suffix in (".TW", ".TWO"):
+            try:
+                h = yf.Ticker(f"{code}{suffix}").history(period="3mo", auto_adjust=True)
+                if not h.empty and len(h) >= 20:
+                    ta_map[code] = _compute_ta(h, current_close)
+                    break
+            except Exception:
+                continue
+
+    if not ta_map:
+        print("       TA 資料全部失敗，使用 ±3/5% 預設值")
+        return recs
+
+    # 組一次性批次 LLM prompt（table 格式）
+    header = "| 代碼 | 名稱 | 現價 | MA5 | MA20 | MA60 | 近20日高 | 近20日低 | RSI | 方向 |"
+    sep    = "|------|------|------|-----|------|------|---------|---------|-----|------|"
+    rows   = [header, sep]
+    valid_codes = []
+    for rec in recs:
+        code = rec["code"]
+        if code not in ta_map:
+            continue
+        ta = ta_map[code]
+        rows.append(
+            f"| {code} | {rec.get('name', code)} | {ta['close']} "
+            f"| {ta['ma5']} | {ta['ma20']} | {ta['ma60'] or 'N/A'} "
+            f"| {ta['high20']} | {ta['low20']} | {ta['rsi']} | {rec.get('action', '停看等')} |"
+        )
+        valid_codes.append(code)
+
+    if not valid_codes:
+        return recs
+
+    prompt = (
+        "以下是今日推薦股票的技術面資料，請根據操作方向給出進場區間、目標、停損與一句中文理由。\n\n"
+        + "\n".join(rows)
+        + "\n\n原則（自行判斷，不需死守）：\n"
+        "- 觀察買進：進場接近 MA20 支撐，目標近20日高點，停損 MA60 下方\n"
+        "- 觀察賣出：提供合理減碼價位，停損設在近期壓力上方\n"
+        "- 停看等：提供關鍵支撐/壓力區間作為參考\n\n"
+        "只輸出 JSON 陣列，不要其他說明文字：\n"
+        '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"reason":"一句話"}]'
+    )
+
+    try:
+        from scripts.llm_client import analyze
+        import re
+        raw = analyze(prompt)
+        m = re.search(r"\[.*\]", raw, re.DOTALL)
+        if not m:
+            print("       TA LLM 未回傳 JSON，使用預設值")
+            return recs
+        items = json.loads(m.group())
+        ta_result = {item["code"]: item for item in items if "code" in item}
+        for rec in recs:
+            item = ta_result.get(rec["code"])
+            if item:
+                for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
+                    if item.get(key) is not None:
+                        rec[key] = item[key]
+        print(f"       TA 完成，{len(ta_result)} 支股票已更新進出場價")
+    except Exception as e:
+        print(f"       TA LLM 失敗（使用 ±3/5% 預設值）：{e}")
 
     return recs
 
@@ -401,41 +530,47 @@ def _build_telegram_msg(report: dict, today: str) -> str:
     sell  = [r for r in recs if r.get("action") == "觀察賣出"]
     watch = [r for r in recs if r.get("action") == "停看等"]
 
-    def _fmt_rec(r: dict, show_entry: bool = True) -> list[str]:
+    def _fmt_rec(r: dict, action_override: str | None = None) -> list[str]:
+        action = action_override or r.get("action", "")
         conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
         out = [f"• {r['code']} {r.get('name', '')}{conf_str}"]
-        if show_entry and r.get("entry_low") and r.get("entry_high"):
-            price_line = f"  進場 {r['entry_low']}-{r['entry_high']}"
-            if r.get("target"):
-                price_line += f"  目標 {r['target']}"
-            if r.get("stop_loss"):
-                price_line += f"  停損 {r['stop_loss']}"
+        el, eh = r.get("entry_low"), r.get("entry_high")
+        tgt, stp = r.get("target"), r.get("stop_loss")
+        if el and eh:
+            label = "減碼" if action == "觀察賣出" else "進場"
+            price_line = f"  {label} {el}-{eh}"
+            if tgt:
+                price_line += f"  目標 {tgt}"
+            if stp:
+                price_line += f"  停損 {stp}"
             out.append(price_line)
         elif r.get("last_close"):
             price_line = f"  現價 {r['last_close']}"
-            if r.get("stop_loss"):
-                price_line += f"  停損 {r['stop_loss']}"
+            if stp:
+                price_line += f"  停損 {stp}"
             out.append(price_line)
-        if r.get("rule_id"):
+        if r.get("reason"):
+            out.append(f"  ↳ {r['reason']}")
+        elif r.get("rule_id"):
             out.append(f"  依據：{r['rule_id']}")
         return out
 
     if buy:
         lines.append("📈 *建議觀察買進*")
         for r in buy[:8]:
-            lines.extend(_fmt_rec(r, show_entry=True))
+            lines.extend(_fmt_rec(r))
         lines.append("")
 
     if sell:
         lines.append("📉 *建議觀察賣出*")
         for r in sell[:5]:
-            lines.extend(_fmt_rec(r, show_entry=False))
+            lines.extend(_fmt_rec(r))
         lines.append("")
 
     if watch:
         lines.append("⏸ *停看等*")
         for r in watch[:5]:
-            lines.extend(_fmt_rec(r, show_entry=False))
+            lines.extend(_fmt_rec(r))
         lines.append("")
 
     if not buy and not watch:
