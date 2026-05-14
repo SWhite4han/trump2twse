@@ -380,3 +380,22 @@
       last_updated_reason: '2026-05-14: EP660明確指出不只MLCC，陶瓷電容、鉭電容、鋁電容、電感、電阻全品類均已啟動漲價，現有規則僅覆蓋MLCC（Vera
         Rubin）與鋁電容（日系退出）兩條線，缺少全品類聯動擴散這一階段性事件'
       evidence_source: qualitative
+  - event: 成熟製程新廠滿載海外客包產漲價
+    keywords:
+      - 世界先進
+      - 成熟製程
+      - 包產能
+      - 台積電技轉
+      - 漲價
+      - 新廠
+      - 需求驅動
+    impact:
+      direction: bullish
+      description: 海外客戶願溢價鎖產能被拒，代表世界先進對行情預期強烈，成熟製程報價進入需求驅動漲價循環
+      sectors:
+        - foundry
+      stocks:
+        foundry:
+          - '5347'
+      last_updated_reason: '2026-05-14: EP660提到世界先進新建廠房產能已全數售罄並取得台積電技轉，且有海外客戶主動開高價求包產能卻遭拒簽約，顯示賣方議價力極強；現有規則僅涵蓋「消費IC恐慌補庫存推升稼動」，未覆蓋新廠需求驅動型漲價議題'
+      evidence_source: qualitative
