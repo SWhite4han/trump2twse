@@ -262,3 +262,24 @@
           - '2317'
       last_updated_reason: '2026-05-14: Trump訪中磋商，美中雙方進入脆弱休戰期，有別於半導體禁令的單向管制，此為廣泛貿易關係緩和事件，直接影響台灣科技供應鏈在美中之間的備料與訂單能見度'
       evidence_source: qualitative
+  - event: Vera Rubin換代觸發被動元件超缺
+    keywords:
+      - Vera Rubin
+      - MLCC
+      - 被動元件缺貨
+      - 鋁電容漲價
+      - 排擠效應
+      - 包產能
+    impact:
+      direction: bullish
+      description: AI GPU換代帶動被動元件用量倍增，供給瓶頸推動漲價，台系廠商跟漲受益
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '2472'
+      last_updated_reason: '2026-05-14: NVIDIA Vera Rubin世代換代用量「超級無敵多」，Power廠已出現包產能行為，MLCC
+        47UF交期拉長、鋁電容Nippon Chemi-Con啟動漲價，供需失衡提前於預期（2026H2→當前）發生，且陶瓷/鉭/鋁電容、電感均同步噴出，漲價連鎖效應具體可追蹤'
+      evidence_source: qualitative
