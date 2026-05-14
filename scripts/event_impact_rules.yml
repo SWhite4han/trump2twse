@@ -241,3 +241,24 @@
           - '2382'
       last_updated_reason: '2026-05-14: 多家聯邦法院接連裁定Trump 10%全球關稅違憲或違法，若判決確立將大幅削減出口關稅壓力，對台灣電子/半導體出口商構成直接利多，與現有規則「衝擊出口」方向相反，屬新型反轉事件'
       evidence_source: qualitative
+  - event: 美中貿易脆弱休戰談判
+    keywords:
+      - US-China truce
+      - fragile truce
+      - Trump China visit
+      - 美中談判
+      - 貿易休戰
+    impact:
+      direction: bullish
+      description: 美中緊張緩和使台廠供應鏈備料週期拉長，短期拉貨效應帶動半導體與組裝廠
+      sectors:
+        - semiconductors
+        - electronics_manufacturing
+      stocks:
+        semiconductors:
+          - '2330'
+          - '2303'
+        electronics_manufacturing:
+          - '2317'
+      last_updated_reason: '2026-05-14: Trump訪中磋商，美中雙方進入脆弱休戰期，有別於半導體禁令的單向管制，此為廣泛貿易關係緩和事件，直接影響台灣科技供應鏈在美中之間的備料與訂單能見度'
+      evidence_source: qualitative
