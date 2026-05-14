@@ -317,3 +317,24 @@
           - '5347'
       last_updated_reason: '2026-05-14: 德州儀器（TI）與羅姆（Rohm）同步啟動漲價，且明確為需求驅動而非成本驅動；世界先進新廠產能已全數賣出並獲台積電技術授權，海外客戶搶先報漲包產能被拒，顯示廠方對後市有強烈預期'
       evidence_source: qualitative
+  - event: 鋁電容日系大廠退出供應缺口漲價
+    keywords:
+      - 鋁電容
+      - OS-CON
+      - Panasonic退出
+      - Nippon Chemi-Con
+      - 漲價
+      - 立隆電
+      - 鈺邦
+    impact:
+      direction: bullish
+      description: 日系產能退出造成結構性缺口，台系鋁電容廠受惠漲價與轉單
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2472'
+          - '6690'
+      last_updated_reason: '2026-05-14: Panasonic停止OS-CON固態電容生產，Nippon Chemi-Con承接但產能不足已發起漲價，屬供給側結構性收縮，不同於Vera
+        Rubin需求面驅動的MLCC短缺'
+      evidence_source: qualitative
