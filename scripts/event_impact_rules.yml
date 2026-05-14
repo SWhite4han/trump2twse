@@ -141,3 +141,19 @@
       last_updated_reason: '2026-05-14: AI 伺服器需求帶動 CoWoS 先進封裝，台積電獨家產能造成轉單效益，Morgan
         Stanley 上調目標價'
       evidence_source: qualitative
+  - event: 歐美貿易關稅衝突升級
+    keywords:
+      - EU tariffs
+      - EU-US trade deal
+      - Trump trade
+      - 歐盟關稅
+      - 貿易報復
+    impact:
+      direction: bearish
+      description: 歐盟若對美實施報復關稅，將壓縮台灣供應鏈在歐美市場的雙邊出口空間，並可能引發歐系客戶縮減採購
+      sectors:
+        - electronics_export
+        - machinery
+      stocks: {}
+      last_updated_reason: '2026-05-14: 多篇報導（EUobserver、politico.eu、歐洲議會）同步指出歐盟與Trump關稅談判瀕臨破裂，EU-US相互報復關稅風險升高，與現有規則中的東南亞僵局屬不同地緣軸線，對台灣出口歐洲的電子與機械廠商形成獨立風險敞口'
+      evidence_source: qualitative
