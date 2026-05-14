@@ -406,16 +406,23 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         print("       yfinance 未安裝，略過。")
         return recs
 
-    # 每支股票抓歷史資料
+    # 每支股票抓歷史資料；順便補上櫃股名稱（TWSE 查不到的）
     ta_map: dict[str, dict] = {}
     for rec in recs:
         code = rec["code"]
         current_close = rec.get("last_close")
         for suffix in (".TW", ".TWO"):
             try:
-                h = yf.Ticker(f"{code}{suffix}").history(period="3mo", auto_adjust=True)
+                ticker = yf.Ticker(f"{code}{suffix}")
+                h = ticker.history(period="3mo", auto_adjust=True)
                 if not h.empty and len(h) >= 20:
                     ta_map[code] = _compute_ta(h, current_close)
+                    # 若 TWSE 沒抓到名稱，從 yfinance 補
+                    if not rec.get("name") and suffix == ".TWO":
+                        info = ticker.info
+                        yf_name = info.get("shortName") or info.get("longName") or ""
+                        if yf_name:
+                            rec["name"] = yf_name.replace("*", "").strip()
                     break
             except Exception:
                 continue
@@ -537,7 +544,8 @@ def _build_telegram_msg(report: dict, today: str) -> str:
     def _fmt_rec(r: dict, action_override: str | None = None) -> list[str]:
         action = action_override or r.get("action", "")
         conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
-        out = [f"• {r['code']} {r.get('name', '')}{conf_str}"]
+        name = r.get("name", "").replace("*", "").strip()  # * 會讓 Telegram Markdown 解析失敗
+        out = [f"• {r['code']} {name}{conf_str}"]
         el, eh = r.get("entry_low"), r.get("entry_high")
         tgt, stp = r.get("target"), r.get("stop_loss")
         if el and eh:
@@ -627,10 +635,10 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
         from scripts.llm_client import analyze
         from scripts.auto_update_rules import apply_updates
 
-        existing_events = _load_rules_summary()
-        # 加入 shadow_updates 已提案的事件，避免每天重複提議相同的規則
-        existing_events = existing_events + _load_shadow_proposed_events(today=today)
-        gua_texts = [t for t in raw_texts if t.startswith("[股癌")]
+        existing_events = list(dict.fromkeys(
+            _load_rules_summary() + _load_shadow_proposed_events(today=today)
+        ))  # 去重，保持順序
+        gua_texts = [t[:1500] for t in raw_texts if t.startswith("[股癌")]  # 截斷避免 LLM 超時
         trump_texts = [t for t in raw_texts if not t.startswith("[股癌")]
         combined = "\n\n---\n".join(gua_texts + trump_texts[:8])
         prompt = (
