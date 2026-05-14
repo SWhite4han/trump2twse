@@ -418,3 +418,19 @@
           - '3016'
       last_updated_reason: '2026-05-14: EP660 明確指出全球矽晶圓業者股價同步轉強，是半導體週期上行由下游（被動元件、先進封裝）擴散至上游的先行訊號；現有規則庫尚無上游矽晶圓維度的追蹤規則，可補充判斷半導體復甦的廣度與深度'
       evidence_source: qualitative
+  - event: 美股光通強勢帶動台股光通補漲
+    keywords:
+      - 光通訊
+      - 美股光通
+      - 落後補漲
+      - 抄答案
+      - 光纖
+    impact:
+      direction: bullish
+      description: 美股光通族群持續領漲後，台灣光通族群依循記憶體/被動元件相同模式落後補漲
+      sectors:
+        - optical_communication
+      stocks:
+        optical_communication: []
+      last_updated_reason: '2026-05-14: EP661明確點出台股光通類似先前記憶體、被動元件的落後補漲節奏：美股光通持續強則台股光通將跟進，已有可操作的國際帶動台股框架'
+      evidence_source: qualitative
