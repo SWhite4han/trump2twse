@@ -44,11 +44,22 @@ OPEN_POSITIONS_FILE = lambda: config.data_dir / "performance" / "open_positions.
 # 公開介面
 # --------------------------------------------------------------------------- #
 
-def run(report_date: Optional[str] = None, shadow: bool = False) -> dict:
-    if report_date is None:
-        report_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
-
-    today = datetime.now().strftime("%Y%m%d")
+def run(report_date: Optional[str] = None, shadow: bool = False,
+        today_str: Optional[str] = None) -> dict:
+    """
+    report_date: 昨日報告日期（YYYYMMDD），預設自動推算
+    today_str:   今日日期（YYYY-MM-DD），補跑時傳入以避免用系統 now
+    """
+    if today_str:
+        from datetime import datetime as _dt
+        _today = _dt.strptime(today_str, "%Y-%m-%d")
+        today = _today.strftime("%Y%m%d")
+        if report_date is None:
+            report_date = (_today - timedelta(days=1)).strftime("%Y%m%d")
+    else:
+        today = datetime.now().strftime("%Y%m%d")
+        if report_date is None:
+            report_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
 
     # 1. 載入持倉與新推薦
     open_pos  = _load_open_positions()

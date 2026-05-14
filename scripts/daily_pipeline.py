@@ -15,6 +15,7 @@
     python scripts/daily_pipeline.py --skip-fetch    # 略過擷取（用昨天的資料測試）
     python scripts/daily_pipeline.py --dry-run       # 只印不推送 Telegram
     python scripts/daily_pipeline.py --shadow        # Phase 6 影子模式：規則更新只記錄不寫入
+    python scripts/daily_pipeline.py --date 2026-05-08  # 補跑指定日期
 """
 from __future__ import annotations
 
@@ -39,9 +40,15 @@ from scripts.lib.twse_client import get_prices, format_price_line
 # Pipeline 主流程
 # --------------------------------------------------------------------------- #
 
-def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False) -> int:
-    today = datetime.now().strftime("%Y-%m-%d")
-    today_compact = datetime.now().strftime("%Y%m%d")
+def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
+        date_str: str | None = None) -> int:
+    if date_str:
+        _dt = datetime.strptime(date_str, "%Y-%m-%d")
+        today = date_str
+        today_compact = _dt.strftime("%Y%m%d")
+    else:
+        today = datetime.now().strftime("%Y-%m-%d")
+        today_compact = datetime.now().strftime("%Y%m%d")
     mode_tag = " [SHADOW]" if shadow else ""
     print(f"\n{'='*60}")
     print(f"  Market Track Daily Pipeline — {today}{mode_tag}")
@@ -74,10 +81,10 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False) -
         print(_build_telegram_msg(report, today))
 
     # ── Step 7：績效追蹤 + 自動改寫規則庫 ────────────────────────────
-    _step_track_performance(shadow=shadow)
+    _step_track_performance(shadow=shadow, today=today)
 
     # ── Step 8：DISCOVER — 探索新事件規則 ────────────────────────────
-    _step_discover_rules(raw_texts, shadow=shadow)
+    _step_discover_rules(raw_texts, shadow=shadow, today=today)
 
     # ── Step 9：更新 PERFORMANCE.md 並推送 GitHub ─────────────────────
     _step_update_perf_report()
@@ -221,9 +228,10 @@ def _load_rules_summary() -> list[str]:
     return [r["event"] for r in rules]
 
 
-def _load_shadow_proposed_events() -> list[str]:
+def _load_shadow_proposed_events(today: str | None = None) -> list[str]:
     """讀取今日 shadow_updates 已提案的事件名稱，用於 DISCOVER 去重。"""
-    today = datetime.now().strftime("%Y-%m-%d")
+    if today is None:
+        today = datetime.now().strftime("%Y-%m-%d")
     shadow_file = config.data_dir / "shadow_updates" / f"{today}.json"
     if not shadow_file.exists():
         return []
@@ -423,11 +431,11 @@ def _build_telegram_msg(report: dict, today: str) -> str:
 # Step 7：績效追蹤
 # --------------------------------------------------------------------------- #
 
-def _step_track_performance(shadow: bool = False) -> None:
+def _step_track_performance(shadow: bool = False, today: str | None = None) -> None:
     print("[7/8] 績效追蹤（昨日建議）…")
     try:
         from scripts.track_recommendation_performance import run as perf_run
-        perf_run(shadow=shadow)
+        perf_run(shadow=shadow, today_str=today)
         shadow_note = "（shadow 模式，規則更新已記錄到 data/shadow_updates/）" if shadow else ""
         print(f"       規則庫自動改寫完成 {shadow_note}")
     except Exception as e:
@@ -438,7 +446,7 @@ def _step_track_performance(shadow: bool = False) -> None:
 # Step 8：DISCOVER — 探索新事件規則
 # --------------------------------------------------------------------------- #
 
-def _step_discover_rules(raw_texts: list[str], shadow: bool = False) -> None:
+def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str | None = None) -> None:
     print("[8/8] DISCOVER — 探索新事件規則…")
     if not raw_texts:
         print("       無文字輸入，略過。")
@@ -454,7 +462,7 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False) -> None:
 
         existing_events = _load_rules_summary()
         # 加入 shadow_updates 已提案的事件，避免每天重複提議相同的規則
-        existing_events = existing_events + _load_shadow_proposed_events()
+        existing_events = existing_events + _load_shadow_proposed_events(today=today)
         combined = "\n\n---\n".join(raw_texts[:10])
         prompt = (
             "你是一位台股事件規則分析師。請從以下新聞文字中，找出「現有規則庫尚未涵蓋」的全新事件模式。\n\n"
@@ -559,13 +567,19 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Phase 6 影子模式：規則庫更新只記錄到 data/shadow_updates/，不實際寫入 YAML",
     )
+    parser.add_argument(
+        "--date",
+        metavar="YYYY-MM-DD",
+        help="補跑指定日期（預設今天）",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _parse_args()
     try:
-        code = run(skip_fetch=args.skip_fetch, dry_run=args.dry_run, shadow=args.shadow)
+        code = run(skip_fetch=args.skip_fetch, dry_run=args.dry_run, shadow=args.shadow,
+                   date_str=args.date)
     except Exception:
         traceback.print_exc()
         try:
