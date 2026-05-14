@@ -115,3 +115,29 @@
           - '2317'
       last_updated_reason: '2026-05-07: Foreign Policy報導美國與東南亞貿易談判陷入僵局，影響已遷廠越南、泰國的台灣供應鏈廠商藉東南亞規避關稅的策略效益'
       evidence_source: qualitative
+  - event: AI 伺服器需求爆發帶動台積電先進封裝
+    keywords:
+      - CoWoS
+      - AI server
+      - advanced packaging
+      - Blackwell
+      - 先進封裝
+      - AI伺服器
+      - 台積電
+    impact:
+      direction: bullish
+      description: AI GPU 需求帶動 CoWoS 先進封裝，台積電獨家供應，聯發科 AI 晶片設計受益
+      sectors:
+        - foundry
+        - ic_design
+        - packaging
+      stocks:
+        foundry:
+          - '2330'
+        ic_design:
+          - '2454'
+        packaging:
+          - '3711'
+      last_updated_reason: '2026-05-14: AI 伺服器需求帶動 CoWoS 先進封裝，台積電獨家產能造成轉單效益，Morgan
+        Stanley 上調目標價'
+      evidence_source: qualitative
