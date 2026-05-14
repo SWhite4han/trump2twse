@@ -218,3 +218,26 @@
           - '2317'
       last_updated_reason: '2026-05-14: BBC 報導 Trump 訪中將測試脆弱停火，與「美國對中半導體禁令」不同，聚焦整體雙邊貿易關係是否崩潰，為台灣供應鏈帶來系統性不確定性'
       evidence_source: qualitative
+  - event: 美國法院裁定阻擋Trump關稅權
+    keywords:
+      - court ruling
+      - tariff blocked
+      - judicial review
+      - IEEPA
+      - 關稅違憲
+    impact:
+      direction: bullish
+      description: 法院阻止關稅執行，降低台灣出口商成本壓力，帶動電子製造族群估值修復
+      sectors:
+        - semiconductors
+        - electronics_manufacturing
+        - supply_chain
+      stocks:
+        semiconductors:
+          - '2330'
+          - '2454'
+        electronics_manufacturing:
+          - '2317'
+          - '2382'
+      last_updated_reason: '2026-05-14: 多家聯邦法院接連裁定Trump 10%全球關稅違憲或違法，若判決確立將大幅削減出口關稅壓力，對台灣電子/半導體出口商構成直接利多，與現有規則「衝擊出口」方向相反，屬新型反轉事件'
+      evidence_source: qualitative
