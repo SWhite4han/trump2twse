@@ -298,3 +298,22 @@
       stocks: {}
       last_updated_reason: '2026-05-14: 05/13 Al Jazeera報導美國上訴法院暫停了下級法院封鎖Trump 10%全球關稅的裁定，與已有規則「美法院封鎖Trump關稅令」方向相反，關稅再度恢復效力，對台灣出口導向產業形成新一輪壓力'
       evidence_source: qualitative
+  - event: 功率半導體需求驅動漲價潮
+    keywords:
+      - 功率半導體漲價
+      - 德州儀器
+      - 羅姆
+      - 成熟製程
+      - 需求驅動
+      - 包產能
+    impact:
+      direction: bullish
+      description: 需求驅動漲價推動成熟製程晶圓廠稼動率與ASP雙升，台系代工廠受益
+      sectors:
+        - mature_node_foundry
+        - power_semiconductor
+      stocks:
+        mature_node_foundry:
+          - '5347'
+      last_updated_reason: '2026-05-14: 德州儀器（TI）與羅姆（Rohm）同步啟動漲價，且明確為需求驅動而非成本驅動；世界先進新廠產能已全數賣出並獲台積電技術授權，海外客戶搶先報漲包產能被拒，顯示廠方對後市有強烈預期'
+      evidence_source: qualitative
