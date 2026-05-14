@@ -434,3 +434,22 @@
         optical_communication: []
       last_updated_reason: '2026-05-14: EP661明確點出台股光通類似先前記憶體、被動元件的落後補漲節奏：美股光通持續強則台股光通將跟進，已有可操作的國際帶動台股框架'
       evidence_source: qualitative
+  - event: 高通AI基礎建設需求爆發帶動供應鏈
+    keywords:
+      - 高通
+      - Qualcomm
+      - AI建設
+      - AI基礎建設
+      - 晶圓代工
+      - 非AI PC
+    impact:
+      direction: bullish
+      description: 高通AI基建需求驅動晶圓代工及IC設計供應鏈受惠，AI終端需求擴散超出伺服器單一場域
+      sectors:
+        - ic_design
+        - foundry
+      stocks:
+        foundry:
+          - '2330'
+      last_updated_reason: '2026-05-14: EP661指出高通近期大漲來自AI基礎建設需求（非AI PC），代表AI支出擴散至NVIDIA以外晶片族群，影響晶圓代工稼動與相關台廠'
+      evidence_source: qualitative
