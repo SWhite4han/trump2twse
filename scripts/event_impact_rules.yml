@@ -283,3 +283,18 @@
       last_updated_reason: '2026-05-14: NVIDIA Vera Rubin世代換代用量「超級無敵多」，Power廠已出現包產能行為，MLCC
         47UF交期拉長、鋁電容Nippon Chemi-Con啟動漲價，供需失衡提前於預期（2026H2→當前）發生，且陶瓷/鉭/鋁電容、電感均同步噴出，漲價連鎖效應具體可追蹤'
       evidence_source: qualitative
+  - event: 美法院暫停關稅封鎖令（關稅重新生效）
+    keywords:
+      - 美法院暫停封鎖
+      - 10%全球關稅
+      - 關稅重新生效
+      - 上訴法院
+    impact:
+      direction: bearish
+      description: 關稅封鎖令被高院暫停，出口型台廠關稅成本壓力再度回籠，買方觀望情緒升溫
+      sectors:
+        - export_manufacturing
+        - electronics
+      stocks: {}
+      last_updated_reason: '2026-05-14: 05/13 Al Jazeera報導美國上訴法院暫停了下級法院封鎖Trump 10%全球關稅的裁定，與已有規則「美法院封鎖Trump關稅令」方向相反，關稅再度恢復效力，對台灣出口導向產業形成新一輪壓力'
+      evidence_source: qualitative
