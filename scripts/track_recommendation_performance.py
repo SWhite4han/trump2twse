@@ -244,13 +244,25 @@ def _save_csv(closed: list[dict]) -> None:
         "actual_low", "actual_high", "actual_close",
         "days_watched", "confidence",
     ]
+
+    # 讀取已存在的 (report_date, code) 集合，防止重複寫入
+    existing_keys: set[tuple] = set()
+    if csv_file.exists():
+        with open(csv_file, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                existing_keys.add((row["report_date"], row["code"]))
+
+    new_rows = [r for r in closed if (r.get("report_date"), r.get("code")) not in existing_keys]
+    if not new_rows:
+        return
+
     write_header = not csv_file.exists()
     with open(csv_file, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         if write_header:
             writer.writeheader()
-        writer.writerows(closed)
-    print(f"[perf] {len(closed)} 筆結案 → {csv_file}")
+        writer.writerows(new_rows)
+    print(f"[perf] {len(new_rows)} 筆結案 → {csv_file}")
 
 
 # --------------------------------------------------------------------------- #
