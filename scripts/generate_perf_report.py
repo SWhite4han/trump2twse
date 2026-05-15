@@ -106,26 +106,33 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         lines.append("")
 
     # 最近 30 筆明細
-    recent = sorted(rows, key=lambda r: r.get("eval_date",""), reverse=True)[:30]
+    recent = sorted(rows, key=lambda r: r.get("close_date",""), reverse=True)[:30]
     if recent:
         lines += [
             "## 最近建議明細",
             "",
-            "| 日期 | 股票 | 規則 | 進場區間 | 目標 | 停損 | 收盤 | 結果 |",
+            "| 日期 | 股票 | 規則 | 進場價 | 目標 | 停損 | 收盤 | 結果 |",
             "|---|---|---|---|---|---|---|---|",
         ]
         for r in recent:
-            entry = f"{r.get('entry_low','—')}–{r.get('entry_high','—')}"
+            entry_price = r.get("actual_entry_price") or "—"
             close = r.get("actual_close") or "—"
             status = PERF_STATUS_EMOJI.get(r.get("close_reason",""), r.get("status_label",""))
+            # 有進場價和收盤價則附報酬率
+            try:
+                ep = float(entry_price)
+                cp = float(close)
+                ret = f"({(cp-ep)/ep*100:+.1f}%)"
+            except (ValueError, TypeError):
+                ret = ""
             lines.append(
                 f"| {r.get('report_date','')} "
                 f"| {r.get('code','')} {r.get('name','')} "
                 f"| {r.get('rule_id','')} "
-                f"| {entry} "
+                f"| {entry_price} "
                 f"| {r.get('target','—')} "
                 f"| {r.get('stop_loss','—')} "
-                f"| {close} "
+                f"| {close} {ret}"
                 f"| {status} |"
             )
         lines.append("")
@@ -140,19 +147,27 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
             lines += [
                 f"### 已進場（{len(holding)} 筆）",
                 "",
-                "| 股票 | 規則 | 進場日 | 目標 | 停損 | 現價 |",
-                "|---|---|---|---|---|---|",
+                "| 股票 | 規則 | 進場日 | 進場價 | 目標 | 停損 | 現價 | 浮動損益 |",
+                "|---|---|---|---|---|---|---|---|",
             ]
             for p in holding:
                 lc = p.get("last_close")
+                ep = p.get("actual_entry_price")
                 lc_str = f"{lc:.1f}" if lc else "—"
+                ep_str = f"{ep:.1f}" if ep else "—"
+                try:
+                    pnl = f"{(lc - ep) / ep * 100:+.1f}%"
+                except (TypeError, ZeroDivisionError):
+                    pnl = "—"
                 lines.append(
                     f"| {p['code']} {p.get('name','')} "
                     f"| {p.get('rule_id','')} "
                     f"| {p.get('entry_date','—')} "
+                    f"| {ep_str} "
                     f"| {p.get('target','—')} "
                     f"| {p.get('stop_loss','—')} "
-                    f"| {lc_str} |"
+                    f"| {lc_str} "
+                    f"| {pnl} |"
                 )
             lines.append("")
         if watching:
