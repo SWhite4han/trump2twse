@@ -103,6 +103,7 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             continue
 
         lo, hi, close_p = price["low"], price["high"], price["close"]
+        op = price.get("open")
         pos["last_close"] = close_p
 
         # 嘗試進場
@@ -110,8 +111,10 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             el, eh = pos.get("entry_low"), pos.get("entry_high")
             if el and eh and lo is not None and hi is not None:
                 if lo <= eh and hi >= el:
-                    pos["state"]      = "holding"
-                    pos["entry_date"] = today
+                    pos["state"]            = "holding"
+                    pos["entry_date"]       = today
+                    # 保守估計：限價單在 entry_high，若開盤更低則用開盤價
+                    pos["actual_entry_price"] = round(min(op, eh), 2) if op else eh
 
         # 判斷結案（holding）
         if pos.get("state") == "holding":
@@ -135,28 +138,31 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
 
         price = prices.get(rec["code"])
         pos = {
-            "code":        rec["code"],
-            "name":        rec.get("name", ""),
-            "rule_id":     rec.get("rule_id", ""),
-            "action":      rec.get("action", ""),
-            "entry_low":   rec.get("entry_low"),
-            "entry_high":  rec.get("entry_high"),
-            "target":      rec.get("target"),
-            "stop_loss":   rec.get("stop_loss"),
-            "report_date": report_date,
-            "confidence":  rec.get("confidence"),
-            "state":       "watching",
-            "entry_date":  None,
-            "days_watched": 0,
-            "last_close":  price.get("close") if price else None,
+            "code":               rec["code"],
+            "name":               rec.get("name", ""),
+            "rule_id":            rec.get("rule_id", ""),
+            "action":             rec.get("action", ""),
+            "entry_low":          rec.get("entry_low"),
+            "entry_high":         rec.get("entry_high"),
+            "target":             rec.get("target"),
+            "stop_loss":          rec.get("stop_loss"),
+            "report_date":        report_date,
+            "confidence":         rec.get("confidence"),
+            "state":              "watching",
+            "entry_date":         None,
+            "actual_entry_price": None,
+            "days_watched":       0,
+            "last_close":         price.get("close") if price else None,
         }
 
         # 當天即觸發進場
         if price and price.get("low") is not None:
             lo, hi = price["low"], price["high"]
+            op = price.get("open")
             if lo <= pos["entry_high"] and hi >= pos["entry_low"]:
-                pos["state"]      = "holding"
-                pos["entry_date"] = today
+                pos["state"]              = "holding"
+                pos["entry_date"]         = today
+                pos["actual_entry_price"] = round(min(op, pos["entry_high"]), 2) if op else pos["entry_high"]
 
                 if pos["target"] and hi >= pos["target"]:
                     _close(pos, "triggered_target", price, today)
@@ -240,7 +246,7 @@ def _save_csv(closed: list[dict]) -> None:
     fieldnames = [
         "report_date", "close_date", "code", "name", "rule_id", "action",
         "entry_low", "entry_high", "target", "stop_loss",
-        "entry_date", "state", "close_reason",
+        "entry_date", "actual_entry_price", "state", "close_reason",
         "actual_low", "actual_high", "actual_close",
         "days_watched", "confidence",
     ]
