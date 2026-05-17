@@ -453,3 +453,38 @@
           - '2330'
       last_updated_reason: '2026-05-14: EP661指出高通近期大漲來自AI基礎建設需求（非AI PC），代表AI支出擴散至NVIDIA以外晶片族群，影響晶圓代工稼動與相關台廠'
       evidence_source: qualitative
+  - event: 投信增持台積電觸發中小型股籌碼流出
+    keywords:
+      - 投信
+      - 公發書
+      - 台積電增持
+      - 籌碼重配
+      - 中小型股賣壓
+      - 汰弱留強
+    impact:
+      direction: mixed
+      description: 台積電因投信增持而獲法人買盤支撐，中小型高投信持股標的面臨停利賣壓與資金排擠。
+      sectors:
+        - semiconductor
+        - small_mid_cap
+      stocks:
+        semiconductor:
+          - '2330'
+      last_updated_reason: '2026-05-17: 股癌EP661/EP662 兩集均明確指出：投信需改公發書（2~5個月）才能增持台積電，市場資金有限，勢必從投信高持股中小型股提款，形成台積電吸金、中小股失血的雙向籌碼重配結構事件，屬台灣市場獨有微結構風險。'
+      evidence_source: qualitative
+  - event: 美股資安股全面創高帶動台股資安補漲
+    keywords:
+      - 資安
+      - CrowdStrike
+      - 創新高
+      - 族群性
+      - 軟體股
+      - 補漲
+    impact:
+      direction: bullish
+      description: 美股資安股領漲形成族群訊號，台股資安相關標的跟漲滯後補漲空間大。
+      sectors:
+        - cybersecurity
+      stocks: {}
+      last_updated_reason: '2026-05-17: 股癌EP662 明確點名 CrowdStrike 等美股資安股一大堆都在創新高，族群性已形成，與過去「美股光通帶動台股光通補漲」為同一跨市連動模式，資安族群在台股尚未充分反映。'
+      evidence_source: qualitative
