@@ -1,0 +1,70 @@
+name: Daily Pipeline
+
+on:
+  schedule:
+    - cron: '0 15-22 * * 1-5'   # 週一至五 UTC 15-22（台北 23:00 起）
+    - cron: '0 9-22 * * 6'      # 週六 UTC 9-22 fetch-only
+  workflow_dispatch:              # 手動觸發（補跑用）
+    inputs:
+      date:
+        description: '補跑日期（YYYY-MM-DD，留空為今日）'
+        required: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat > .env << 'EOF'
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          LLM_BACKEND=anthropic
+          TRUMP_SOURCE_URL=${{ secrets.TRUMP_SOURCE_URL }}
+          GUA_CANCER_BASE_URL=${{ secrets.GUA_CANCER_BASE_URL }}
+          TIMEZONE=Asia/Taipei
+          EOF
+
+      - name: Create runtime directories
+        run: mkdir -p logs data/performance data/raw data/reports data/shadow_updates
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run pipeline
+        run: |
+          DOW=$(date +%u)   # 1=Mon … 6=Sat 7=Sun
+          if [ "$DOW" = "6" ]; then
+            ARGS="--fetch-only"
+          elif [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="--date ${{ github.event.inputs.date }}"
+          else
+            ARGS=""
+          fi
+          python scripts/daily_pipeline.py $ARGS
+
+      - name: Commit performance state
+        run: |
+          git add data/performance/
+          git diff --cached --quiet && echo "無狀態變動" && exit 0
+          git commit -m "chore: sync performance state $(date -u +%Y-%m-%d)"
+          git push

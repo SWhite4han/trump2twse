@@ -8,7 +8,7 @@
 ## 執行環境
 
 - Python：一律使用 `.venv/bin/python`（系統 PATH 無 `python`）
-- 排程：crontab，週一至五 UTC 01:00（台北 09:00）
+- 排程：crontab，週一至五 UTC 15:00 起每小時（台北 23:00 起），週六 UTC 09:00-22:00 fetch-only
 - Shadow run 觀察期中：`daily_pipeline.py --shadow`
 
 ## 專案結構

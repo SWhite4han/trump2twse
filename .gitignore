@@ -10,10 +10,13 @@ __pycache__/
 .venv/
 venv/
 
-# 資料與日誌（內容會頻繁變動，不進版控）
-data/
+# 資料與日誌
+data/raw/
+data/reports/
+data/shadow_updates/
 logs/
 *.log
+# data/performance/ 不忽略 — GitHub Actions 靠 git 持久化狀態
 
 # IDE
 .vscode/
