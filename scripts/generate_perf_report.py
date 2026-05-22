@@ -14,6 +14,8 @@ from pathlib import Path
 from scripts.lib.config import config
 from scripts.track_recommendation_performance import MAX_WATCH_DAYS
 
+CAPITAL_PER_TRADE = 100_000  # 每筆假設投入 10 萬
+
 PERF_STATUS_EMOJI = {
     "triggered_target": "✅ 達標",
     "triggered_stop":   "❌ 停損",
@@ -68,6 +70,19 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     hit_rate  = f"{target_hits/len(triggered)*100:.0f}%" if triggered else "—"
     stop_rate = f"{stop_hits/len(triggered)*100:.0f}%"   if triggered else "—"
 
+    # TWD P&L（只算有進場且已結案的）
+    total_pnl = 0.0
+    pnl_count = 0
+    for r in triggered:
+        try:
+            ep = float(r["actual_entry_price"])
+            cp = float(r["actual_close"])
+            total_pnl += (cp - ep) / ep * CAPITAL_PER_TRADE
+            pnl_count += 1
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
+    pnl_str = f"{total_pnl:+,.0f} 元（{pnl_count} 筆，每筆 {CAPITAL_PER_TRADE//10000} 萬）" if pnl_count else "—"
+
     lines: list[str] = [
         "# Performance Report",
         "",
@@ -82,6 +97,7 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         f"| 觸發進場 | {len(triggered)} |",
         f"| 達標率 | {hit_rate} |",
         f"| 停損率 | {stop_rate} |",
+        f"| 模擬損益 | {pnl_str} |",
         "",
     ]
 
@@ -111,20 +127,21 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         lines += [
             "## 最近建議明細",
             "",
-            "| 日期 | 股票 | 規則 | 進場價 | 目標 | 停損 | 收盤 | 結果 |",
-            "|---|---|---|---|---|---|---|---|",
+            "| 日期 | 股票 | 規則 | 進場價 | 目標 | 停損 | 收盤 | 損益(元) | 結果 |",
+            "|---|---|---|---|---|---|---|---|---|",
         ]
         for r in recent:
             entry_price = r.get("actual_entry_price") or "—"
             close = r.get("actual_close") or "—"
             status = PERF_STATUS_EMOJI.get(r.get("close_reason",""), r.get("status_label",""))
-            # 有進場價和收盤價則附報酬率
             try:
                 ep = float(entry_price)
                 cp = float(close)
                 ret = f"({(cp-ep)/ep*100:+.1f}%)"
+                pnl_cell = f"{(cp-ep)/ep*CAPITAL_PER_TRADE:+,.0f}"
             except (ValueError, TypeError):
                 ret = ""
+                pnl_cell = "—"
             lines.append(
                 f"| {r.get('report_date','')} "
                 f"| {r.get('code','')} {r.get('name','')} "
@@ -133,6 +150,7 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
                 f"| {r.get('target','—')} "
                 f"| {r.get('stop_loss','—')} "
                 f"| {close} {ret}"
+                f"| {pnl_cell} "
                 f"| {status} |"
             )
         lines.append("")

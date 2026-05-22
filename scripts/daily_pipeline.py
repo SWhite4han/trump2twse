@@ -84,8 +84,12 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 4.5：技術面分析（yfinance MA/RSI + batch LLM）─────────────
     recommendations = _step_enrich_ta(recommendations)
 
+    # ── Step 4.7：投資組合決策（持倉感知）────────────────────────────
+    open_positions = _load_open_positions()
+    recommendations, position_updates = _step_portfolio_decision(recommendations, open_positions)
+
     # ── Step 5：儲存日報 ─────────────────────────────────────────────
-    report = _step_save_report(recommendations, matched_events, today_compact)
+    report = _step_save_report(recommendations, matched_events, today_compact, position_updates)
 
     # ── Step 6：Telegram 推送 ─────────────────────────────────────────
     if not dry_run:
@@ -267,6 +271,18 @@ def _load_shadow_proposed_events(today: str | None = None) -> list[str]:
         return list({e.get("event", "") for e in entries if e.get("event")})
     except Exception:
         return []
+
+
+# --------------------------------------------------------------------------- #
+# 持倉讀取
+# --------------------------------------------------------------------------- #
+
+def _load_open_positions() -> list[dict]:
+    f = config.data_dir / "performance" / "open_positions.json"
+    if not f.exists():
+        return []
+    with open(f, encoding="utf-8") as fp:
+        return json.load(fp)
 
 
 # --------------------------------------------------------------------------- #
@@ -490,16 +506,128 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# Step 4.7：投資組合決策
+# --------------------------------------------------------------------------- #
+
+def _step_portfolio_decision(
+    recs: list[dict],
+    open_positions: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """依持倉狀態讓 LLM 決定每支推薦的操作類型。
+
+    Returns:
+        filtered_recs:    update_type 為 new / add 的建議（進入正常開倉流程）
+        position_updates: update_type 為 raise_target 的調整指令
+    """
+    if not recs:
+        return [], []
+
+    open_codes = {p["code"] for p in open_positions}
+
+    if not open_codes:
+        for r in recs:
+            r["update_type"] = "new"
+        return recs, []
+
+    holding_lines = []
+    for p in open_positions:
+        entry = p.get("actual_entry_price") or "觀察中"
+        lc = p.get("last_close", "?")
+        state = "持有中" if p.get("state") == "holding" else "觀察中"
+        pnl_str = ""
+        if p.get("actual_entry_price") and p.get("last_close"):
+            pnl = (p["last_close"] - p["actual_entry_price"]) / p["actual_entry_price"] * 100
+            pnl_str = f" 浮動{pnl:+.1f}%"
+        holding_lines.append(
+            f"  {p['code']} {p.get('name','')}｜{state}｜進場{entry}｜"
+            f"目標{p.get('target','?')}｜現價{lc}{pnl_str}｜"
+            f"持有{p.get('days_watched',0)}天｜規則:{p.get('rule_id','')[:14]}"
+        )
+
+    rec_lines = []
+    for r in recs:
+        rec_lines.append(
+            f"  {r['code']} {r.get('name','')}｜{r.get('action','')}｜"
+            f"進場{r.get('entry_low','?')}-{r.get('entry_high','?')}｜"
+            f"目標{r.get('target','?')}｜規則:{r.get('rule_id','')[:16]}"
+        )
+
+    prompt = (
+        "你是一位台股投資組合管理師。以下是今日市場訊號觸發的推薦標的，以及目前已追蹤的倉位。\n\n"
+        "請對每支推薦股票決定操作類型：\n"
+        "- \"new\"：目前無此股票倉位，建議開新倉\n"
+        "- \"add\"：已有倉位，但今日有更好的進場點或訊號更強，建議加倉（獨立計算損益）\n"
+        "- \"raise_target\"：已有倉位，不需加倉，但今日訊號支持上調目標價與停損\n"
+        "- \"hold\"：已有倉位，今日訊號只是再次確認，繼續持有，無需動作\n\n"
+        "判斷原則：\n"
+        "- 已持倉且浮動獲利 > 5% → 傾向 raise_target 而非 add\n"
+        "- 已持倉且新進場區間明顯更低（加碼攤低）→ 可考慮 add\n"
+        "- 同一支股票 add 不超過一次\n\n"
+        f"目前持倉/觀察（{len(open_positions)} 筆）：\n" + "\n".join(holding_lines) + "\n\n"
+        f"今日新訊號推薦（{len(recs)} 筆）：\n" + "\n".join(rec_lines) + "\n\n"
+        "只輸出 JSON 陣列，不要其他文字：\n"
+        '[{"code":"XXXX","update_type":"new|add|raise_target|hold",'
+        '"new_target":null,"new_stop":null,"reason":"一句話"}]'
+    )
+
+    try:
+        from scripts.llm_client import analyze
+        import re
+        raw = analyze(prompt)
+        m = re.search(r"\[.*\]", raw, re.DOTALL)
+        if not m:
+            raise ValueError("LLM 未回傳 JSON")
+        decisions = {d["code"]: d for d in json.loads(m.group()) if "code" in d}
+    except Exception as e:
+        print(f"       投資組合決策 LLM 失敗（fallback）：{e}")
+        decisions = {}
+
+    filtered_recs: list[dict] = []
+    position_updates: list[dict] = []
+
+    for r in recs:
+        dec = decisions.get(r["code"])
+        if dec:
+            update_type = dec.get("update_type", "new")
+        else:
+            update_type = "new" if r["code"] not in open_codes else "hold"
+        r["update_type"] = update_type
+
+        if update_type in ("new", "add"):
+            if dec and dec.get("reason"):
+                r.setdefault("reason", dec["reason"])
+            filtered_recs.append(r)
+        elif update_type == "raise_target":
+            position_updates.append({
+                "code":       r["code"],
+                "update_type": "raise_target",
+                "new_target": dec.get("new_target") if dec else r.get("target"),
+                "new_stop":   dec.get("new_stop")   if dec else r.get("stop_loss"),
+                "reason":     dec.get("reason", "")  if dec else "",
+                "rule_id":    r.get("rule_id", ""),
+            })
+        # "hold" → 不開倉，不調整，略過
+
+    new_count = sum(1 for r in filtered_recs if r["update_type"] == "new")
+    add_count  = sum(1 for r in filtered_recs if r["update_type"] == "add")
+    upd_count  = len(position_updates)
+    print(f"       新倉 {new_count} 筆｜加倉 {add_count} 筆｜調目標 {upd_count} 筆")
+    return filtered_recs, position_updates
+
+
+# --------------------------------------------------------------------------- #
 # Step 5：存日報
 # --------------------------------------------------------------------------- #
 
-def _step_save_report(recs: list[dict], events: list[dict], date_compact: str) -> dict:
+def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
+                      position_updates: list[dict] | None = None) -> dict:
     print("[5/8] 儲存日報…")
     report = {
         "date": date_compact,
         "generated_at": datetime.now().isoformat(),
         "events": events,
         "recommendations": recs,
+        "position_updates": position_updates or [],
     }
     out_dir = config.data_dir / "reports"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -541,15 +669,16 @@ def _build_telegram_msg(report: dict, today: str) -> str:
             lines.append("")
 
     recs = report.get("recommendations", [])
-    buy   = [r for r in recs if r.get("action") == "觀察買進"]
-    sell  = [r for r in recs if r.get("action") == "觀察賣出"]
-    watch = [r for r in recs if r.get("action") == "停看等"]
+    new_recs  = [r for r in recs if r.get("update_type") != "add"]
+    add_recs  = [r for r in recs if r.get("update_type") == "add"]
+    pos_updates = report.get("position_updates", [])
 
-    def _fmt_rec(r: dict, action_override: str | None = None) -> list[str]:
-        action = action_override or r.get("action", "")
+    def _fmt_rec(r: dict, label_override: str | None = None) -> list[str]:
+        action = r.get("action", "")
         conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
-        name = r.get("name", "").replace("*", "").strip()  # * 會讓 Telegram Markdown 解析失敗
-        out = [f"• {r['code']} {name}{conf_str}"]
+        name = r.get("name", "").replace("*", "").strip()
+        tag = f" `{label_override}`" if label_override else ""
+        out = [f"• {r['code']} {name}{conf_str}{tag}"]
         el, eh = r.get("entry_low"), r.get("entry_high")
         tgt, stp = r.get("target"), r.get("stop_loss")
         if el and eh:
@@ -571,6 +700,10 @@ def _build_telegram_msg(report: dict, today: str) -> str:
             out.append(f"  依據：{r['rule_id']}")
         return out
 
+    buy   = [r for r in new_recs if r.get("action") == "觀察買進"]
+    sell  = [r for r in new_recs if r.get("action") == "觀察賣出"]
+    watch = [r for r in new_recs if r.get("action") == "停看等"]
+
     if buy:
         lines.append("📈 *建議觀察買進*")
         for r in buy[:8]:
@@ -589,9 +722,27 @@ def _build_telegram_msg(report: dict, today: str) -> str:
             lines.extend(_fmt_rec(r))
         lines.append("")
 
-    if not buy and not watch:
+    if add_recs:
+        lines.append("➕ *建議加倉*")
+        for r in add_recs[:5]:
+            lines.extend(_fmt_rec(r, label_override="加倉"))
+        lines.append("")
+
+    if pos_updates:
+        lines.append("🎯 *持倉目標上調*")
+        for u in pos_updates[:5]:
+            name_line = f"• {u['code']}"
+            if u.get("new_target"):
+                name_line += f"  新目標 {u['new_target']}"
+            if u.get("new_stop"):
+                name_line += f"  新停損 {u['new_stop']}"
+            lines.append(name_line)
+            if u.get("reason"):
+                lines.append(f"  ↳ {u['reason']}")
+        lines.append("")
+
+    if not buy and not watch and not add_recs and not pos_updates:
         lines.append("今日無明確建議標的，維持觀望。")
-        # 列出偵測到但尚無規則匹配的事件，讓用戶知道市場在發生什麼
         matched_rule_ids = {r.get("rule_id") for r in recs}
         unmatched = [e for e in events if e.get("event") not in matched_rule_ids and e.get("confidence", 0) >= 0.5]
         if unmatched:

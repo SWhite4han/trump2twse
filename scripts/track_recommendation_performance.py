@@ -62,8 +62,9 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             report_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
 
     # 1. 載入持倉與新推薦
-    open_pos  = _load_open_positions()
-    new_recs  = _load_recommendations(report_date)
+    open_pos        = _load_open_positions()
+    new_recs        = _load_recommendations(report_date)
+    position_updates = _load_position_updates(report_date)
 
     if not open_pos and not new_recs:
         print(f"[perf] 找不到 {report_date} 的建議，且無進行中持倉，中止。")
@@ -73,9 +74,6 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
     all_codes = list({p["code"] for p in open_pos} | {r["code"] for r in new_recs})
     prices = get_prices(all_codes) if all_codes else {}
 
-    # 3. 新推薦的股票代碼（用來判斷「被覆蓋」）
-    new_codes = {r["code"] for r in new_recs}
-
     # 4. 更新現有持倉
     still_open: list[dict] = []
     closed:     list[dict] = []
@@ -84,11 +82,13 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
         code  = pos["code"]
         price = prices.get(code)
 
-        # 被新推薦覆蓋
-        if code in new_codes:
-            _close(pos, "superseded", price, today)
-            closed.append(pos)
-            continue
+        # 套用 raise_target 調整（不關閉倉位）
+        if code in position_updates:
+            upd = position_updates[code]
+            if upd.get("new_target"):
+                pos["target"] = upd["new_target"]
+            if upd.get("new_stop"):
+                pos["stop_loss"] = upd["new_stop"]
 
         # 逾期未進場
         pos["days_watched"] = pos.get("days_watched", 0) + 1
@@ -216,6 +216,16 @@ def _load_recommendations(date_str: str) -> list[dict]:
         return []
     with open(report_file, encoding="utf-8") as f:
         return json.load(f).get("recommendations", [])
+
+
+def _load_position_updates(date_str: str) -> dict[str, dict]:
+    """回傳 {code: update_dict}，只含 raise_target 類型。"""
+    report_file = config.data_dir / "reports" / f"daily_report_{date_str}.json"
+    if not report_file.exists():
+        return {}
+    with open(report_file, encoding="utf-8") as f:
+        updates = json.load(f).get("position_updates", [])
+    return {u["code"]: u for u in updates if u.get("update_type") == "raise_target"}
 
 
 # --------------------------------------------------------------------------- #
