@@ -23,7 +23,7 @@ PERF_STATUS_EMOJI = {
 }
 
 
-def run() -> None:
+def run(date_str: str | None = None) -> None:
     rows      = _load_all_csv()
     open_pos  = _load_open_positions()
 
@@ -36,7 +36,7 @@ def run() -> None:
     out.write_text(md, encoding="utf-8")
     print(f"[report] → {out}")
 
-    _git_commit(str(out))
+    _git_commit(str(out), date_str=date_str)
 
 
 # --------------------------------------------------------------------------- #
@@ -198,8 +198,9 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _git_commit(filepath: str) -> None:
+def _git_commit(filepath: str, date_str: str | None = None) -> None:
     root = str(config.project_root)
+    label = date_str or datetime.now().strftime("%Y-%m-%d")
     try:
         subprocess.run(["git", "add", filepath], cwd=root, check=True, capture_output=True)
         result = subprocess.run(
@@ -210,7 +211,7 @@ def _git_commit(filepath: str) -> None:
             print("[report] PERFORMANCE.md 無變動，略過 commit。")
             return
         subprocess.run(
-            ["git", "commit", "-m", f"perf: update PERFORMANCE.md {datetime.now().strftime('%Y-%m-%d')}"],
+            ["git", "commit", "-m", f"perf: update PERFORMANCE.md {label}"],
             cwd=root, check=True, capture_output=True
         )
         subprocess.run(["git", "push"], cwd=root, check=True, capture_output=True)

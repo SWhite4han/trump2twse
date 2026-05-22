@@ -34,7 +34,7 @@ if str(_ROOT) not in sys.path:
 
 from scripts.lib.config import config
 from scripts.lib.telegram import send as tg_send
-from scripts.lib.twse_client import get_prices, format_price_line
+from scripts.lib.twse_client import get_prices, format_price_line, get_yf_ticker
 
 
 # --------------------------------------------------------------------------- #
@@ -51,6 +51,12 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
         today = datetime.now().strftime("%Y-%m-%d")
         today_compact = datetime.now().strftime("%Y%m%d")
     mode_tag = " [SHADOW]" if shadow else ""
+
+    # 幂等保護：同一天若報告已存在，直接跳出（補跑 --date 不擋）
+    report_path = config.data_dir / "reports" / f"daily_report_{today_compact}.json"
+    if report_path.exists() and not date_str:
+        print(f"[skip] 今日報告已存在（{report_path.name}），略過。")
+        return 0
     print(f"\n{'='*60}")
     print(f"  Market Track Daily Pipeline — {today}{mode_tag}")
     print(f"{'='*60}\n")
@@ -95,7 +101,7 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     _step_discover_rules(raw_texts, shadow=shadow, today=today)
 
     # ── Step 9：更新 PERFORMANCE.md 並推送 GitHub ─────────────────────
-    _step_update_perf_report()
+    _step_update_perf_report(today=today)
 
     # ── Step 10：自動審閱 shadow 提案 ────────────────────────────────
     if not dry_run:
@@ -105,11 +111,11 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     return 0
 
 
-def _step_update_perf_report() -> None:
+def _step_update_perf_report(today: str | None = None) -> None:
     print("[9/9] 更新 PERFORMANCE.md…")
     try:
         from scripts.generate_perf_report import run as perf_report_run
-        perf_report_run()
+        perf_report_run(date_str=today)
     except Exception as e:
         print(f"       PERFORMANCE.md 更新失敗（繼續）：{e}")
 
@@ -411,21 +417,19 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
     for rec in recs:
         code = rec["code"]
         current_close = rec.get("last_close")
-        for suffix in (".TW", ".TWO"):
-            try:
-                ticker = yf.Ticker(f"{code}{suffix}")
-                h = ticker.history(period="3mo", auto_adjust=True)
-                if not h.empty and len(h) >= 20:
-                    ta_map[code] = _compute_ta(h, current_close)
-                    # 若 TWSE 沒抓到名稱，從 yfinance 補
-                    if not rec.get("name") and suffix == ".TWO":
-                        info = ticker.info
-                        yf_name = info.get("shortName") or info.get("longName") or ""
-                        if yf_name:
-                            rec["name"] = yf_name.replace("*", "").strip()
-                    break
-            except Exception:
-                continue
+        yf_sym = get_yf_ticker(code)
+        try:
+            ticker = yf.Ticker(yf_sym)
+            h = ticker.history(period="3mo", auto_adjust=True)
+            if not h.empty and len(h) >= 20:
+                ta_map[code] = _compute_ta(h, current_close)
+                if not rec.get("name"):
+                    info = ticker.info
+                    yf_name = info.get("shortName") or info.get("longName") or ""
+                    if yf_name:
+                        rec["name"] = yf_name.replace("*", "").strip()
+        except Exception:
+            pass
 
     if not ta_map:
         print("       TA 資料全部失敗，使用 ±3/5% 預設值")
