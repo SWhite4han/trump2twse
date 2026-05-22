@@ -509,3 +509,24 @@
       last_updated_reason: '2026-05-22: EP663明確點名Google TPU V8由聯發科Zebrafish對應博通Sunfish、V9由聯發科Humu
         Fish承接，聯發科正以主力ASIC設計夥伴身份切入Google自研AI晶片供應鏈，此需求驅動與現有Nvidia生態系規則不同，屬全新事件主線'
       evidence_source: qualitative
+  - event: Google TPU聯發科搶入AI客製晶片設計
+    keywords:
+      - Google TPU
+      - 聯發科
+      - Zebrafish
+      - Humu Fish
+      - 博通
+      - Sunfish
+      - 客製AI晶片
+      - 雲端TPU
+    impact:
+      direction: bullish
+      description: 聯發科打入Google TPU設計競爭格局，打破博通獨佔，帶動市場上修聯發科AI營收預期
+      sectors:
+        - IC_design
+      stocks:
+        IC_design:
+          - '2454'
+      last_updated_reason: '2026-05-22: 股癌EP663具體點名聯發科以Zebrafish對應Google TPU V8、Humu
+        Fish對應V9，直接與博通Sunfish競爭同一設計標案；若聯發科拿下份額，代表台廠切入超大雲端AI客製晶片供應鏈，現有規則庫中無此題材'
+      evidence_source: qualitative
