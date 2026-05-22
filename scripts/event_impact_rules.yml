@@ -488,3 +488,24 @@
       stocks: {}
       last_updated_reason: '2026-05-17: 股癌EP662 明確點名 CrowdStrike 等美股資安股一大堆都在創新高，族群性已形成，與過去「美股光通帶動台股光通補漲」為同一跨市連動模式，資安族群在台股尚未充分反映。'
       evidence_source: qualitative
+  - event: Google TPU 聯發科深度介入ASIC設計
+    keywords:
+      - Google TPU
+      - 聯發科
+      - Zebrafish
+      - Humu Fish
+      - ASIC
+      - 自研AI晶片
+    impact:
+      direction: bullish
+      description: 聯發科承接Google 
+        TPU客製ASIC設計訂單，開闢Nvidia供應鏈以外的AI晶片營收來源，帶動相關IC設計與先進封裝需求
+      sectors:
+        - IC設計
+        - AI晶片
+      stocks:
+        IC設計:
+          - '2454'
+      last_updated_reason: '2026-05-22: EP663明確點名Google TPU V8由聯發科Zebrafish對應博通Sunfish、V9由聯發科Humu
+        Fish承接，聯發科正以主力ASIC設計夥伴身份切入Google自研AI晶片供應鏈，此需求驅動與現有Nvidia生態系規則不同，屬全新事件主線'
+      evidence_source: qualitative
