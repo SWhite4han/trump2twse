@@ -530,3 +530,37 @@
       last_updated_reason: '2026-05-22: 股癌EP663具體點名聯發科以Zebrafish對應Google TPU V8、Humu
         Fish對應V9，直接與博通Sunfish競爭同一設計標案；若聯發科拿下份額，代表台廠切入超大雲端AI客製晶片供應鏈，現有規則庫中無此題材'
       evidence_source: qualitative
+  - event: 日系大廠漲價函引爆被動元件現貨搶購
+    keywords:
+      - Panasonic漲價函
+      - 現貨掃貨
+      - 採購恐慌
+      - 電容囤積
+      - 貼牌廠商
+    impact:
+      direction: bullish
+      description: 大廠正式漲價函引爆下游恐慌補庫存與現貨囤積，強化被動元件多波段漲價循環
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '3026'
+      last_updated_reason: '2026-05-23: Panasonic已對部分客戶發出正式漲價通知，直接引發採購部門緊急赴現貨市場掃貨；台灣貼牌廠商（本即向日本採購電容回台出貨）亦趁機囤積。此為需求端恐慌性搶購新觸發機制，與現有規則側重供給端斷鏈或產能退出不同，將加速供需失衡惡化並強化漲價幅度與持續性'
+      evidence_source: qualitative
+  - event: 歐美關稅談判轉向妥協緩和
+    keywords:
+      - EU妥協
+      - 關稅談判
+      - 歐美貿易協議
+      - 貿易衝突緩和
+    impact:
+      direction: bullish
+      description: 歐美關稅緊張關係緩和可改善全球貿易預期，減輕台灣科技出口廠商的訂單與匯率不確定性壓力
+      sectors:
+        - electronics_export
+        - tech_manufacturing
+      stocks: {}
+      last_updated_reason: '2026-05-23: EU於05/20主動提出妥協方案以阻止Trump進一步升高關稅，方向性與現有規則庫「歐美貿易關稅衝突升級」相反；若歐美達成貿易協議，將降低全球供應鏈不確定性，對台灣出口導向科技製造業具情緒面正向效益'
+      evidence_source: qualitative
