@@ -564,3 +564,64 @@
       stocks: {}
       last_updated_reason: '2026-05-23: EU於05/20主動提出妥協方案以阻止Trump進一步升高關稅，方向性與現有規則庫「歐美貿易關稅衝突升級」相反；若歐美達成貿易協議，將降低全球供應鏈不確定性，對台灣出口導向科技製造業具情緒面正向效益'
       evidence_source: qualitative
+  - event: Anthropic首度轉獲利強化AI硬體投資循環
+    keywords:
+      - Anthropic
+      - 獲利
+      - AI泡沫
+      - 算力
+      - 硬體投資
+    impact:
+      direction: bullish
+      description: AI基礎建設回報可見度提升，刺激雲端業者持續擴大GPU/CoWoS/HBM採購，台灣AI供應鏈受惠
+      sectors:
+        - AI伺服器
+        - 先進封裝
+        - HBM記憶體模組
+      stocks:
+        AI伺服器:
+          - '2330'
+        先進封裝:
+          - '3711'
+      last_updated_reason: '2026-05-24: 最燒錢AI公司轉獲利，打臉AI泡沫論並驗證硬體設備可回本，預期帶動業者加大算力採購，延長AI硬體需求週期'
+      evidence_source: qualitative
+  - event: AI算力包產能潮擴散至OSAT封測
+    keywords:
+      - OSAT
+      - 封測
+      - 包產能
+      - 供需失衡
+      - AI伺服器
+    impact:
+      direction: bullish
+      description: AI客戶搶佔封測產能形成供需失衡，推升OSAT報價與稼動率，帶動封測股估值重評
+      sectors:
+        - 封裝測試
+      stocks:
+        封裝測試:
+          - '3711'
+          - '6239'
+          - '2328'
+      last_updated_reason: '2026-05-24: 節目明確點名包產能浪潮將從記憶體、晶圓代工、光通擴散至OSAT封測，封測廠成下一個供需瓶頸與漲價候選'
+      evidence_source: qualitative
+  - event: Google-Blackstone TPU雲端解鎖第三方算力市場
+    keywords:
+      - Google TPU
+      - Blackstone
+      - 第三方雲端
+      - 算力市場
+      - 隱私
+    impact:
+      direction: bullish
+      description: 中立第三方TPU雲端降低企業採用門檻，驅動TPU產能需求倍增，台積電及TPU供應鏈（聯發科、CoWoS）受惠
+      sectors:
+        - ASIC設計
+        - 晶圓代工
+        - AI基礎建設
+      stocks:
+        ASIC設計:
+          - '2454'
+        晶圓代工:
+          - '2330'
+      last_updated_reason: '2026-05-24: Google聯手Blackstone建立第三方TPU雲端，解決企業資料隱私顧慮，大幅擴大TPU可服務客群，外銷比例目標達三分之一，直接拉升TPU產能需求'
+      evidence_source: qualitative
