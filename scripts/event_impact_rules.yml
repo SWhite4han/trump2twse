@@ -647,3 +647,43 @@
           - '2330'
       last_updated_reason: '2026-05-25: EP664明確指出馬斯克Grok發展不如預期後轉租Colossus算力，鉅額投資可在1-2年內回本，確立「AI模型失敗仍可靠硬體租賃變現」新商業模式。此事件與已有規則「Anthropic首度轉獲利」機制不同：Anthropic驗證AI模型盈利，本事件驗證硬體資產本身的租賃安全邊際，為AI硬體投資提供下行保護，進一步強化買硬體意願'
       evidence_source: qualitative
+  - event: AI伺服器電源模組推升高壓MLCC瓶頸缺口
+    keywords:
+      - 高壓MLCC
+      - 47μF
+      - 22μF
+      - AI伺服器電源
+      - 村田
+      - Semco
+      - 電源模組
+    impact:
+      direction: bullish
+      description: AI 伺服器電源供應模組對高壓 MLCC 的長期結構性需求，推升 47μF/22μF 現貨持續短缺並帶動台系被動元件廠受惠
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '6173'
+      last_updated_reason: '2026-05-25: EP664 明確指出 AI 伺服器電源櫃對高壓 MLCC 用量結構性增大，47μF
+        缺到爆炸且僅由村田與 Semco 供應、22μF 同步告缺，形成有別於 Vera Rubin 換代的獨立需求驅動鏈（電源管理基礎設施，非 GPU 晶片本身）'
+      evidence_source: qualitative
+  - event: 被動元件廠商棄低階轉高階重塑供給結構
+    keywords:
+      - 被動元件轉型
+      - 高階產品
+      - 低階退出
+      - 供給結構
+      - 稼動率
+    impact:
+      direction: bullish
+      description: 廠商主動退出低階品種、集中高階，壓縮低階供給天花板，使低階品現貨溢價持續而非短暫
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+      last_updated_reason: '2026-05-25: EP663 指出高階產能吃飽後廠商可拒接低階訂單轉做高階，這是供給面結構性改變（非短期缺料），將長期壓縮低階被動元件可用產能，形成慢性缺貨溢價'
+      evidence_source: qualitative
