@@ -625,3 +625,25 @@
           - '2330'
       last_updated_reason: '2026-05-24: Google聯手Blackstone建立第三方TPU雲端，解決企業資料隱私顧慮，大幅擴大TPU可服務客群，外銷比例目標達三分之一，直接拉升TPU產能需求'
       evidence_source: qualitative
+  - event: xAI Colossus算力出租確立AI硬體租賃回本模式
+    keywords:
+      - xAI
+      - Colossus
+      - 算力出租
+      - AI硬體租賃
+      - 投資回本
+    impact:
+      direction: bullish
+      description: AI硬體投資下行風險被租賃模式托底，採購方對伺服器/基礎建設投資意願提升，利好台灣AI伺服器組裝與CoWoS先進封裝供應鏈
+      sectors:
+        - ai_server
+        - advanced_packaging
+      stocks:
+        ai_server:
+          - '2317'
+          - '2382'
+          - '6669'
+        advanced_packaging:
+          - '2330'
+      last_updated_reason: '2026-05-25: EP664明確指出馬斯克Grok發展不如預期後轉租Colossus算力，鉅額投資可在1-2年內回本，確立「AI模型失敗仍可靠硬體租賃變現」新商業模式。此事件與已有規則「Anthropic首度轉獲利」機制不同：Anthropic驗證AI模型盈利，本事件驗證硬體資產本身的租賃安全邊際，為AI硬體投資提供下行保護，進一步強化買硬體意願'
+      evidence_source: qualitative
