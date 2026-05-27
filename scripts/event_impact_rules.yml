@@ -730,3 +730,23 @@
           - '2492'
       last_updated_reason: '2026-05-27: 鉭為衝突礦物(conflict mineral)，EP665明確指出危機環境下客戶以資本力量壓縮驗證期快速轉向MLCC與鋁電容；此為結構性替代需求而非週期性補庫存，可延長漲價循環且現有被動元件漲價規則未捕捉此驅動機制'
       evidence_source: qualitative
+  - event: 被動元件通路商庫存升值帶動漲停潮
+    keywords:
+      - 通路商
+      - 被動元件
+      - 漲停
+      - 庫存升值
+      - 現貨缺貨
+      - 大聯大
+      - 文曄
+    impact:
+      direction: bullish
+      description: 被動元件現貨短缺時，通路商現貨庫存跟隨漲價，庫存評價與毛利雙升，形成有別於製造端的第二波漲價受益
+      sectors:
+        - passive_component_distribution
+      stocks:
+        passive_component_distribution:
+          - '3702'
+          - '3036'
+      last_updated_reason: '2026-05-27: 股癌EP664明確點名通路商與MLCC/鋁電容/電感/電阻製造商同列漲停，現有規則庫僅涵蓋製造端漲價，未涵蓋通路商因持有現貨庫存在短缺期間同步增值的獨立獲利機制'
+      evidence_source: qualitative
