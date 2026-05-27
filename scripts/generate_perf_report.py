@@ -76,8 +76,10 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     for r in triggered:
         try:
             ep = float(r["actual_entry_price"])
-            cp = float(r["actual_close"])
-            total_pnl += (cp - ep) / ep * CAPITAL_PER_TRADE
+            cp = float(r.get("exit_price") or r["actual_close"])
+            is_sell = r.get("action") == "觀察賣出"
+            raw = (ep - cp) / ep if is_sell else (cp - ep) / ep
+            total_pnl += raw * CAPITAL_PER_TRADE
             pnl_count += 1
         except (TypeError, ValueError, ZeroDivisionError):
             pass
@@ -132,15 +134,17 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         ]
         for r in recent:
             entry_price = r.get("actual_entry_price") or "—"
-            close = r.get("actual_close") or "—"
+            close = r.get("exit_price") or r.get("actual_close") or "—"
             status = PERF_STATUS_EMOJI.get(r.get("close_reason",""), r.get("status_label",""))
             try:
-                ep = float(entry_price)
-                cp = float(close)
-                ret = f"({(cp-ep)/ep*100:+.1f}%)"
-                pnl_cell = f"{(cp-ep)/ep*CAPITAL_PER_TRADE:+,.0f}"
+                ep  = float(entry_price)
+                cp  = float(close)
+                is_sell = r.get("action") == "觀察賣出"
+                raw = (ep - cp) / ep if is_sell else (cp - ep) / ep
+                ret      = f"({raw*100:+.1f}%)"
+                pnl_cell = f"{raw*CAPITAL_PER_TRADE:+,.0f}"
             except (ValueError, TypeError):
-                ret = ""
+                ret      = ""
                 pnl_cell = "—"
             lines.append(
                 f"| {r.get('report_date','')} "

@@ -78,6 +78,9 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 3：規則匹配 → 建議清單 ──────────────────────────────────
     recommendations = _step_match_rules(matched_events)
 
+    # ── Step 3.5：大盤方向濾網（台指/TWII）────────────────────────────
+    recommendations = _step_market_filter(recommendations)
+
     # ── Step 4：補齊股價（TWSE 今日收盤 + ±3/5% 預設值）────────────────
     recommendations = _step_enrich_prices(recommendations)
 
@@ -347,6 +350,32 @@ def _direction_to_action(direction: str, sector: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Step 3.5：大盤方向濾網
+# --------------------------------------------------------------------------- #
+
+def _step_market_filter(recs: list[dict]) -> list[dict]:
+    """依大盤方向過濾逆勢訊號。
+
+    bull  市場：移除「觀察賣出」（順勢操作，不逆勢做空）
+    bear  市場：保留所有訊號（目前不額外過濾買進）
+    neutral / unknown：不過濾
+    """
+    print("[3.5] 大盤方向濾網…")
+    from scripts.lib.market_filter import get_market_state
+    state = get_market_state()
+    print(f"       TWII 狀態：{state['state'].upper()}（{state['reason']}）")
+
+    if state["state"] == "bull":
+        sell = [r for r in recs if r.get("action") == "觀察賣出"]
+        if sell:
+            codes = ", ".join(r["code"] for r in sell)
+            print(f"       移除 {len(sell)} 筆逆勢賣出訊號（{codes}）")
+        return [r for r in recs if r.get("action") != "觀察賣出"]
+
+    return recs
+
+
+# --------------------------------------------------------------------------- #
 # Step 4：補齊股價
 # --------------------------------------------------------------------------- #
 
@@ -478,6 +507,9 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         "- 觀察買進：進場接近 MA20 支撐，目標近20日高點，停損 MA60 下方\n"
         "- 觀察賣出：提供合理減碼價位，停損設在近期壓力上方\n"
         "- 停看等：提供關鍵支撐/壓力區間作為參考\n\n"
+        "【重要限制】台股每日漲跌幅 ±10%，進場區間（entry_low / entry_high）必須在現價的 90%～110% 以內。"
+        "若 MA20 遠低於現價（股票過熱），entry 仍需設在現價 -10% 以內的可執行區間，"
+        "並在 reason 中說明需等回測，不可直接寫出遙不可及的 MA20 價位。\n\n"
         "只輸出 JSON 陣列，不要其他說明文字：\n"
         '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"reason":"一句話"}]'
     )
@@ -498,6 +530,15 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
                 for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
                     if item.get(key) is not None:
                         rec[key] = item[key]
+            # 後處理：硬截斷進場價到現價 ±10%（台股漲跌幅限制）
+            close = rec.get("last_close")
+            if close:
+                floor = round(close * 0.90, 1)
+                ceil  = round(close * 1.10, 1)
+                if rec.get("entry_low") is not None:
+                    rec["entry_low"] = max(floor, min(ceil, rec["entry_low"]))
+                if rec.get("entry_high") is not None:
+                    rec["entry_high"] = max(floor, min(ceil, rec["entry_high"]))
         print(f"       TA 完成，{len(ta_result)} 支股票已更新進出場價")
     except Exception as e:
         print(f"       TA LLM 失敗（使用 ±3/5% 預設值）：{e}")
@@ -622,9 +663,11 @@ def _step_portfolio_decision(
 def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
                       position_updates: list[dict] | None = None) -> dict:
     print("[5/8] 儲存日報…")
+    from scripts.lib.market_filter import get_market_state
     report = {
         "date": date_compact,
         "generated_at": datetime.now().isoformat(),
+        "market_state": get_market_state(),
         "events": events,
         "recommendations": recs,
         "position_updates": position_updates or [],
