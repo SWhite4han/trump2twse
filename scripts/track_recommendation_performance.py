@@ -28,7 +28,8 @@ from typing import Optional
 from scripts.lib.config import config
 from scripts.lib.twse_client import get_prices
 
-MAX_WATCH_DAYS = 10  # 未進場的最長觀察天數
+MAX_WATCH_DAYS    = 10       # 未進場的最長觀察天數
+CAPITAL_PER_TRADE = 100_000  # 每筆模擬資金
 
 CLOSE_REASON_LABEL = {
     "triggered_target": "✅ 觸達目標",
@@ -280,8 +281,27 @@ def _close(pos: dict, reason: str, price: Optional[dict], today: str) -> None:
     pos["close_date"]   = today
     if price:
         pos["actual_close"] = price.get("close")
-        pos["actual_low"]   = price.get("low")
-        pos["actual_high"]  = price.get("high")
+
+    # exit_price：限價成交用 target/stop_loss 價；其他用收盤
+    if reason == "triggered_target":
+        exit_p = pos.get("target")
+    elif reason == "triggered_stop":
+        exit_p = pos.get("stop_loss")
+    else:
+        exit_p = pos.get("actual_close")
+    pos["exit_price"] = exit_p
+
+    # P&L
+    entry_p = pos.get("actual_entry_price")
+    if entry_p and exit_p:
+        try:
+            ep, cp   = float(entry_p), float(exit_p)
+            is_sell  = pos.get("action") == "觀察賣出"
+            raw      = (ep - cp) / ep if is_sell else (cp - ep) / ep
+            pos["pnl_pct"] = round(raw * 100, 2)
+            pos["pnl_twd"] = round(raw * CAPITAL_PER_TRADE, 0)
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
 
 
 # --------------------------------------------------------------------------- #
@@ -297,11 +317,11 @@ def _save_csv(closed: list[dict]) -> None:
     csv_file  = perf_dir / f"{month}.csv"
 
     fieldnames = [
-        "report_date", "close_date", "code", "name", "rule_id", "action",
+        "report_date", "code", "name", "rule_id", "action",
         "entry_low", "entry_high", "target", "stop_loss",
-        "entry_date", "actual_entry_price", "state", "close_reason",
-        "actual_low", "actual_high", "actual_close",
-        "days_watched", "confidence",
+        "entry_date", "actual_entry_price", "exit_price",
+        "close_reason", "close_date",
+        "pnl_pct", "pnl_twd", "days_watched", "confidence",
     ]
 
     # 讀取已存在的 (report_date, code) 集合，防止重複寫入

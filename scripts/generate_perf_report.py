@@ -178,7 +178,9 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
                 lc_str = f"{lc:.1f}" if lc else "—"
                 ep_str = f"{ep:.1f}" if ep else "—"
                 try:
-                    pnl = f"{(lc - ep) / ep * 100:+.1f}%"
+                    is_sell = p.get("action") == "觀察賣出"
+                    raw = (ep - lc) / ep if is_sell else (lc - ep) / ep
+                    pnl = f"{raw * 100:+.1f}%"
                 except (TypeError, ZeroDivisionError):
                     pnl = "—"
                 lines.append(
