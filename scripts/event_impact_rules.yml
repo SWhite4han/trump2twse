@@ -710,3 +710,23 @@
           - '3017'
       last_updated_reason: '2026-05-27: EP665明確指出SpaceX高機率成為新Neo Cloud概念股，供應鏈已見蛛絲馬跡；衛星搭載AI伺服器具無限能源優勢，散熱片與太陽能板需求巨大，形成有別於地面資料中心的全新算力投資主題，現有規則庫未涵蓋此太空軌道算力脈絡'
       evidence_source: qualitative
+  - event: 鉭電容爭議金屬退場加速MLCC結構替代
+    keywords:
+      - 鉭電容
+      - 爭議金屬
+      - 衝突礦物
+      - MLCC替代
+      - 鋁電容
+      - 驗證期壓縮
+      - B/B ratio
+    impact:
+      direction: bullish
+      description: 鉭電容被迫退出市場的替代訂單湧入MLCC與鋁電容廠，在稼動率已達80-90%時進一步推升供需缺口與毛利率
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+      last_updated_reason: '2026-05-27: 鉭為衝突礦物(conflict mineral)，EP665明確指出危機環境下客戶以資本力量壓縮驗證期快速轉向MLCC與鋁電容；此為結構性替代需求而非週期性補庫存，可延長漲價循環且現有被動元件漲價規則未捕捉此驅動機制'
+      evidence_source: qualitative
