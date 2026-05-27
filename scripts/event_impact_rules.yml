@@ -687,3 +687,26 @@
           - '2492'
       last_updated_reason: '2026-05-25: EP663 指出高階產能吃飽後廠商可拒接低階訂單轉做高階，這是供給面結構性改變（非短期缺料），將長期壓縮低階被動元件可用產能，形成慢性缺貨溢價'
       evidence_source: qualitative
+  - event: SpaceX IPO引爆衛星軌道AI伺服器概念
+    keywords:
+      - SpaceX
+      - IPO
+      - Neo Cloud
+      - 衛星AI伺服器
+      - 軌道算力
+      - 散熱片
+      - 太陽能板
+      - 太空運算
+    impact:
+      direction: bullish
+      description: SpaceX IPO卡位太空運算第一棒，帶動軌道衛星AI伺服器供應鏈（散熱、太陽能板）進入本夢比估值重塑期
+      sectors:
+        - 散熱模組
+        - 太空組件
+        - 衛星概念
+      stocks:
+        散熱模組:
+          - '3324'
+          - '3017'
+      last_updated_reason: '2026-05-27: EP665明確指出SpaceX高機率成為新Neo Cloud概念股，供應鏈已見蛛絲馬跡；衛星搭載AI伺服器具無限能源優勢，散熱片與太陽能板需求巨大，形成有別於地面資料中心的全新算力投資主題，現有規則庫未涵蓋此太空軌道算力脈絡'
+      evidence_source: qualitative
