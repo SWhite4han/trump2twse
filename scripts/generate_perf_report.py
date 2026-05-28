@@ -129,16 +129,17 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         lines += [
             "## 最近建議明細",
             "",
-            "| 日期 | 股票 | 規則 | 進場價 | 目標 | 停損 | 收盤 | 損益(元) | 結果 |",
-            "|---|---|---|---|---|---|---|---|---|",
+            "| 日期 | 股票 | 規則 | 進場價 | 目標 | 停損 | 出場價 | 當日收盤 | 損益(元) | 結果 |",
+            "|---|---|---|---|---|---|---|---|---|---|",
         ]
         for r in recent:
             entry_price = r.get("actual_entry_price") or "—"
-            close = r.get("exit_price") or r.get("actual_close") or "—"
+            exit_p   = r.get("exit_price") or "—"
+            actual_c = r.get("actual_close") or "—"
             status = PERF_STATUS_EMOJI.get(r.get("close_reason",""), r.get("status_label",""))
             try:
                 ep  = float(entry_price)
-                cp  = float(close)
+                cp  = float(exit_p)
                 is_sell = r.get("action") == "觀察賣出"
                 raw = (ep - cp) / ep if is_sell else (cp - ep) / ep
                 ret      = f"({raw*100:+.1f}%)"
@@ -153,7 +154,8 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
                 f"| {entry_price} "
                 f"| {r.get('target','—')} "
                 f"| {r.get('stop_loss','—')} "
-                f"| {close} {ret}"
+                f"| {exit_p} {ret}"
+                f"| {actual_c} "
                 f"| {pnl_cell} "
                 f"| {status} |"
             )

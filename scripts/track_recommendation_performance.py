@@ -319,7 +319,7 @@ def _save_csv(closed: list[dict]) -> None:
     fieldnames = [
         "report_date", "code", "name", "rule_id", "action",
         "entry_low", "entry_high", "target", "stop_loss",
-        "entry_date", "actual_entry_price", "exit_price",
+        "entry_date", "actual_entry_price", "actual_close", "exit_price",
         "close_reason", "close_date",
         "pnl_pct", "pnl_twd", "days_watched", "confidence",
     ]
