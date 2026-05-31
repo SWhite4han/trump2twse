@@ -1,6 +1,6 @@
 """台股大盤方向濾網
 
-使用 ^TWII（加權指數）+ 外資買賣超 + 美股大盤，綜合判斷市場偏向，
+使用 ^TWII（加權指數）+ 外資買賣超 + 美股大盤 + 台指期夜盤，綜合判斷市場偏向，
 供 daily_pipeline 調整事件 confidence 及過濾逆勢訊號。
 """
 from __future__ import annotations
@@ -81,9 +81,10 @@ def _fetch_state() -> dict:
         trend = "MA5>MA20 多排列" if ma5 > ma20 else "MA5<MA20 空排列"
         reason += f"，{trend}"
 
-    # --- 新增：美股 + 法人 + 綜合偏向 ---
+    # --- 美股 + 法人 + 台指期夜盤 + 綜合偏向 ---
     us   = _fetch_us_market()
     inst = _fetch_institutional()
+    txf  = _fetch_txf_night(last)
 
     score = 0.0
     if state == "bull":    score += 1.0
@@ -99,6 +100,11 @@ def _fetch_state() -> dict:
         if sp500 > 0.5:    score += 0.5
         elif sp500 < -0.5: score -= 0.5
 
+    txf_pct = txf.get("txf_pct")
+    if txf_pct is not None:
+        if txf_pct > 0.5:    score += 0.6
+        elif txf_pct < -0.5: score -= 0.6
+
     bias = "bullish" if score > 0.6 else "bearish" if score < -0.6 else "neutral"
 
     bias_parts = [f"台股 {state}（5日 {ret5:+.1f}%）"]
@@ -106,20 +112,23 @@ def _fetch_state() -> dict:
         bias_parts.append(inst["comment"])
     if "不可用" not in us["comment"]:
         bias_parts.append(us["comment"])
+    if "不可用" not in txf["comment"]:
+        bias_parts.append(txf["comment"])
     bias_label = {"bullish": "多", "bearish": "空", "neutral": "中性"}[bias]
     bias_summary = "，".join(bias_parts) + f" → 整體偏{bias_label}"
 
     return {
-        "state":        state,
-        "5d_return":    ret5,
-        "ma5":          ma5,
-        "ma20":         ma20,
-        "last_close":   last,
-        "reason":       reason,
-        "us_market":    us,
+        "state":         state,
+        "5d_return":     ret5,
+        "ma5":           ma5,
+        "ma20":          ma20,
+        "last_close":    last,
+        "reason":        reason,
+        "us_market":     us,
         "institutional": inst,
-        "bias":         bias,
-        "bias_summary": bias_summary,
+        "txf_night":     txf,
+        "bias":          bias,
+        "bias_summary":  bias_summary,
     }
 
 
@@ -171,16 +180,59 @@ def _fetch_institutional() -> dict:
     return result
 
 
+def _fetch_txf_night(twii_close: float) -> dict:
+    """從 TAIFEX MIS API 取台指期夜盤近月合約，計算相對今日收盤的隔夜漲跌幅。
+
+    pipeline 在台北 23:00 跑時，夜盤（17:00–05:00）已開 6 小時。
+    近月合約 = SymbolID 格式為 TXFx0-M（7碼），按最近成交時間排序取首筆。
+    """
+    result: dict = {"txf_price": None, "txf_pct": None, "comment": "台指期夜盤不可用"}
+    try:
+        resp = requests.post(
+            "https://mis.taifex.com.tw/futures/api/getQuoteList",
+            json={"MarketType": "1", "CcommodityID": "TX"},
+            timeout=10,
+            headers={"User-Agent": "MarketTrack/1.0"},
+        )
+        data = resp.json()
+        if data.get("RtCode") != "0":
+            return result
+        quotes = data["RtData"]["QuoteList"]
+        # 過濾近月單腿合約（TXFF6-M 共7碼，排除價差如 TXFF6/G6-M）
+        candidates = [
+            q for q in quotes
+            if len(q.get("SymbolID", "")) == 7
+            and q["SymbolID"].endswith("-M")
+            and q.get("CLastPrice", "0") not in ("0", "0.00", "")
+        ]
+        if not candidates:
+            return result
+        # 取最近成交的（=近月，流動性最高）
+        candidates.sort(key=lambda q: q.get("CDate", "") + q.get("CTime", ""), reverse=True)
+        front = candidates[0]
+        price = float(front["CLastPrice"])
+        pct = round((price - twii_close) / twii_close * 100, 2)
+        direction = "偏多" if pct > 0 else "偏空"
+        result["txf_price"] = price
+        result["txf_pct"] = pct
+        result["comment"] = f"台指期夜盤 {price:.0f}（{pct:+.2f}%，隔夜{direction}）"
+        print(f"       台指期夜盤：{front['SymbolID']} {price:.0f}（vs TWII {twii_close:.0f}，{pct:+.2f}%）")
+    except Exception as e:
+        print(f"       [市場濾網] 台指期夜盤失敗（略過）：{e}")
+    return result
+
+
 def _unknown() -> dict:
     return {
-        "state":        "unknown",
-        "5d_return":    None,
-        "ma5":          None,
-        "ma20":         None,
-        "last_close":   None,
-        "reason":       "資料不可用，略過濾網",
-        "us_market":    {"sp500_1d_pct": None, "nasdaq_1d_pct": None, "comment": "美股資料不可用"},
+        "state":         "unknown",
+        "5d_return":     None,
+        "ma5":           None,
+        "ma20":          None,
+        "last_close":    None,
+        "reason":        "資料不可用，略過濾網",
+        "us_market":     {"sp500_1d_pct": None, "nasdaq_1d_pct": None, "comment": "美股資料不可用"},
         "institutional": {"foreign_net": None, "trust_net": None, "comment": "法人資料不可用"},
-        "bias":         "neutral",
-        "bias_summary": "大盤資料不可用，偏中性",
+        "txf_night":     {"txf_price": None, "txf_pct": None, "comment": "台指期夜盤不可用"},
+        "bias":          "neutral",
+        "bias_summary":  "大盤資料不可用，偏中性",
     }
