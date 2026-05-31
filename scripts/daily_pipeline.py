@@ -184,11 +184,25 @@ def _step_classify(texts: list[str]) -> list[dict]:
 
     try:
         from scripts.llm_client import analyze
+        from scripts.lib.market_filter import get_market_state
         rules = _load_rules_summary()
         # 股癌排前面（完整），Trump 取前 8 則（macro 事件）
         gua_texts = [t for t in texts if t.startswith("[股癌")]
         trump_texts = [t for t in texts if not t.startswith("[股癌")]
         combined = "\n\n---\n".join(gua_texts + trump_texts[:8])
+
+        # 取得大盤背景（有每日 cache，不重複呼叫 API）
+        try:
+            mkt = get_market_state()
+            market_ctx = (
+                f"\n\n## 今日市場背景（請參考此背景調整 confidence 與 direction）\n"
+                f"{mkt.get('bias_summary', mkt.get('reason', ''))}\n"
+                f"→ 若大盤整體偏多，bearish 事件請降低 confidence；"
+                f"若大盤整體偏空，bullish 事件需有更強基本面支撐才給高 confidence。\n"
+            )
+        except Exception:
+            market_ctx = ""
+
         prompt = (
             "你是一位台股分析師助理。請從以下文字中，辨識出任何可能對台股造成影響的重要市場事件。\n\n"
             "文字來源說明：\n"
@@ -200,6 +214,7 @@ def _step_classify(texts: list[str]) -> list[dict]:
             '"summary": "一句話摘要", '
             '"source_date": "消息來源日期或集數，從文字前綴 [MM/DD] 或 [股癌EPxxx] 取得，例如：05/06、EP659"}]\n\n'
             f"規則庫已知事件（供參考，不限於此）：{json.dumps(rules, ensure_ascii=False)}\n\n"
+            f"{market_ctx}"
             f"待分析文字：\n{combined}"
         )
         raw = analyze(prompt)
@@ -354,23 +369,35 @@ def _direction_to_action(direction: str, sector: str) -> str:
 # --------------------------------------------------------------------------- #
 
 def _step_market_filter(recs: list[dict]) -> list[dict]:
-    """依大盤方向過濾逆勢訊號。
+    """依大盤綜合偏向過濾或調整訊號。
 
-    bull  市場：移除「觀察賣出」（順勢操作，不逆勢做空）
-    bear  市場：保留所有訊號（目前不額外過濾買進）
+    bullish（台股多頭 + 外資買超 + 美股收漲）：移除「觀察賣出」
+    bearish（台股空頭 + 外資賣超 + 美股收跌）：買進建議信心度 × 0.75
     neutral / unknown：不過濾
     """
     print("[3.5] 大盤方向濾網…")
     from scripts.lib.market_filter import get_market_state
-    state = get_market_state()
-    print(f"       TWII 狀態：{state['state'].upper()}（{state['reason']}）")
+    mkt = get_market_state()
+    _state_to_bias = {"bull": "bullish", "bear": "bearish", "neutral": "neutral", "unknown": "neutral"}
+    bias = mkt.get("bias") or _state_to_bias.get(mkt.get("state", "neutral"), "neutral")
+    print(f"       TWII 狀態：{mkt['state'].upper()}（{mkt['reason']}）")
+    if "bias_summary" in mkt:
+        print(f"       綜合偏向：{bias.upper()} — {mkt.get('bias_summary', '')}")
 
-    if state["state"] == "bull":
+    if bias == "bullish":
         sell = [r for r in recs if r.get("action") == "觀察賣出"]
         if sell:
             codes = ", ".join(r["code"] for r in sell)
             print(f"       移除 {len(sell)} 筆逆勢賣出訊號（{codes}）")
         return [r for r in recs if r.get("action") != "觀察賣出"]
+
+    if bias == "bearish":
+        adjusted = sum(1 for r in recs if r.get("action") == "觀察買進")
+        for r in recs:
+            if r.get("action") == "觀察買進":
+                r["confidence"] = round(r.get("confidence", 0.8) * 0.75, 2)
+        if adjusted:
+            print(f"       大盤偏空：{adjusted} 筆買進建議信心度降至 75%")
 
     return recs
 

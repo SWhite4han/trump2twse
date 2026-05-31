@@ -28,10 +28,10 @@ _TRUTH_SOCIAL_ACCOUNT_ID = "107780257626128497"
 # RSSHub 公共鏡像（Truth Social 路由，多數已失效，保留以防復活）
 _RSSHUB_MIRRORS: list[str] = []
 
-# Google News RSS 查詢（穩定備援，不依賴 RSSHub）
+# Google News RSS 查詢（聚焦新政策動作，&tbs=qdr:d7 限 7 天內）
 _GOOGLE_NEWS_QUERIES = [
-    "Trump tariff trade policy",
-    "Trump Truth Social statement",
+    "Trump tariff trade executive order",
+    "Trump policy announcement deal signed",
 ]
 
 _HEADERS = {
@@ -123,8 +123,16 @@ def _strip_html(html: str) -> str:
 
 
 def _normalise_date(raw: str) -> str:
+    """Parse RFC 2822 / ISO date strings to UTC ISO format."""
+    if not raw:
+        return raw
+    # RFC 2822（含 GMT）—— email.utils 處理最完整
+    try:
+        from email.utils import parsedate_to_datetime
+        return parsedate_to_datetime(raw.strip()).astimezone(timezone.utc).isoformat()
+    except Exception:
+        pass
     for fmt in (
-        "%a, %d %b %Y %H:%M:%S %z",
         "%Y-%m-%dT%H:%M:%S%z",
         "%Y-%m-%dT%H:%M:%SZ",
     ):
@@ -140,12 +148,22 @@ def _normalise_date(raw: str) -> str:
 # Google News RSS 備援
 # --------------------------------------------------------------------------- #
 
+def _parse_pub_datetime(date_str: str) -> datetime | None:
+    """Parse normalized ISO published_at string to timezone-aware datetime."""
+    if not date_str:
+        return None
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
 def _try_google_news() -> list[dict]:
-    """從 Google News RSS 抓 Trump 相關新聞作為穩定備援。"""
+    """從 Google News RSS 抓 Trump 相關新聞作為穩定備援。只保留 3 天內的文章。"""
     posts = []
     seen: set[str] = set()
     for query in _GOOGLE_NEWS_QUERIES:
-        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query)}&hl=en-US&gl=US&ceid=US:en"
+        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query)}&tbs=qdr:d7&hl=en-US&gl=US&ceid=US:en"
         try:
             resp = requests.get(url, headers=_HEADERS, timeout=_TIMEOUT)
             resp.raise_for_status()
@@ -159,6 +177,10 @@ def _try_google_news() -> list[dict]:
         except Exception:
             continue
         time.sleep(0.5)
+
+    # 按發布日期排序（最新在前），讓 _step_classify 的 [:8] 自然取最新的
+    posts.sort(key=lambda p: p.get("published_at", ""), reverse=True)
+    print(f"       Google News：{len(posts)} 則（日期排序，最新在前）")
     return posts
 
 
@@ -167,7 +189,7 @@ def _try_google_news() -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 def _try_ddgs_fallback() -> list[dict]:
-    """用 duckduckgo-search 抓最近 Trump 相關新聞作為備援。"""
+    """用 duckduckgo-search 抓最近 Trump 相關新聞作為備援。今日無結果時嘗試 3 日內。"""
     try:
         from ddgs import DDGS  # type: ignore
     except ImportError:
@@ -176,17 +198,25 @@ def _try_ddgs_fallback() -> list[dict]:
         except ImportError:
             return []
 
-    posts = []
-    with DDGS() as ddgs:
-        results = list(ddgs.news("Trump Truth Social statement tariff trade", max_results=10, timelimit="d"))
-    for r in results:
-        posts.append({
-            "id": r.get("url", ""),
-            "text": (r.get("title", "") + " " + r.get("body", "")).strip(),
-            "published_at": r.get("date", ""),
-            "source_url": r.get("url", ""),
-        })
-    return posts
+    query = "Trump tariff trade announcement executive order"
+    for timelimit in ("d", "w"):  # 先試今日，再試近一週
+        try:
+            with DDGS() as ddgs:
+                results = list(ddgs.news(query, max_results=20, timelimit=timelimit))
+            if results:
+                posts = []
+                for r in results:
+                    posts.append({
+                        "id": r.get("url", ""),
+                        "text": (r.get("title", "") + " " + r.get("body", "")).strip(),
+                        "published_at": r.get("date", ""),
+                        "source_url": r.get("url", ""),
+                    })
+                print(f"       DDGS（timelimit={timelimit}）：{len(posts)} 則")
+                return posts
+        except Exception:
+            continue
+    return []
 
 
 # --------------------------------------------------------------------------- #
