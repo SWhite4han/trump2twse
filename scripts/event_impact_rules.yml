@@ -805,3 +805,44 @@
       stocks: {}
       last_updated_reason: '2026-05-31: EP666明確提到融資增加速度超快、大量資金卡在處置股流動性受限、且有人已質押再買形成槓桿疊槓桿結構，為規則庫中尚無對應的系統性過熱警示事件，若修正觸發將產生連鎖強制平倉壓力'
       evidence_source: qualitative
+  - event: Trump關稅退款上訴拉長法律不確定期
+    keywords:
+      - Trump關稅退款
+      - IEEPA上訴
+      - tariff refund appeal
+      - 關稅退款懸置
+      - 前置備貨
+    impact:
+      direction: bullish
+      description: 關稅退款訴訟懸置使美國進口商無法確定最終成本，維持提前下單備貨行為，台灣出口製造商受惠需求韌性
+      sectors:
+        - ODM/OEM
+        - 電子零組件
+      stocks:
+        ODM/OEM:
+          - '2317'
+          - '2382'
+          - '3231'
+      last_updated_reason: '2026-05-31: 多家媒體同日確認Trump政府將上訴法院「強制退還IEEPA關稅」裁定，退款懸置期拉長，進口商前置備貨動機持續，台灣ODM/OEM出貨需求受保護'
+      evidence_source: qualitative
+  - event: Tesla馬斯克估值敘事轉能源機器人FSD
+    keywords:
+      - 馬斯克敘事轉型
+      - Tesla機器人
+      - 能源儲存
+      - FSD自動駕駛
+      - 人形機器人供應鏈
+    impact:
+      direction: bullish
+      description: Tesla估值邏輯從EV銷量轉移至能源/機器人/FSD，帶動台灣機器人零組件與能源儲存供應鏈補漲
+      sectors:
+        - 工業機器人
+        - 能源儲存
+        - 自動駕駛
+      stocks:
+        工業機器人:
+          - '2049'
+        能源儲存:
+          - '2308'
+      last_updated_reason: '2026-05-31: 股癌EP665明確指出市場已不再以電動車出貨量評估Tesla/Musk概念，重心轉移至能源儲存、人形機器人、自動駕駛，台灣相關供應鏈獲新敘事支撐'
+      evidence_source: qualitative
