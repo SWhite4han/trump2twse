@@ -750,3 +750,58 @@
           - '3036'
       last_updated_reason: '2026-05-27: 股癌EP664明確點名通路商與MLCC/鋁電容/電感/電阻製造商同列漲停，現有規則庫僅涵蓋製造端漲價，未涵蓋通路商因持有現貨庫存在短缺期間同步增值的獨立獲利機制'
       evidence_source: qualitative
+  - event: 光通休息資金輪動回ODM/EMS接棒
+    keywords:
+      - 資金輪動
+      - ODM
+      - EMS
+      - 光通休息
+      - 接棒
+    impact:
+      direction: bullish
+      description: 光通板塊進入整理期，主力資金轉移至ODM/EMS，推動此板塊估值修復
+      sectors:
+        - ODM
+        - EMS
+      stocks:
+        ODM:
+          - '2382'
+          - '3231'
+          - '2356'
+          - '2324'
+          - '4938'
+      last_updated_reason: '2026-05-31: 股癌EP666明確描述光通段休息後，資金已輪動回ODM/EMS，且ODM/OEM本季交出好成績為基本面支撐，形成有別於光通/資安補漲的新一波籌碼輪動訊號'
+      evidence_source: qualitative
+  - event: 美企業軟體AI獲利驗證帶動IGV強勢
+    keywords:
+      - IGV
+      - 軟體輪動
+      - AI貨幣化
+      - Salesforce
+      - ServiceNow
+      - Snowflake
+    impact:
+      direction: bullish
+      description: 美國企業軟體AI貨幣化進入驗證期，IGV領漲引發市場對台股軟體相關概念股補漲預期
+      sectors:
+        - enterprise_software
+        - AI_application
+      stocks: {}
+      last_updated_reason: '2026-05-31: EP666指出Salesforce大買回庫藏股、ServiceNow/Okta/Snowflake以AI增益交出超預期成績，IGV
+        ETF已全面突破，複製先前美股光通/資安帶動台股同類股補漲的模式，屬規則庫尚未涵蓋的新板塊輪動'
+      evidence_source: qualitative
+  - event: 台股融資急速膨脹觸發過熱警示
+    keywords:
+      - 融資暴增
+      - 處置股
+      - 槓桿疊加
+      - 過熱
+      - 強制平倉風險
+    impact:
+      direction: bearish
+      description: 融資槓桿快速堆疊，處置股流動性枯竭，一旦觸發修正將出現連鎖強制平倉賣壓
+      sectors:
+        - broad_market
+      stocks: {}
+      last_updated_reason: '2026-05-31: EP666明確提到融資增加速度超快、大量資金卡在處置股流動性受限、且有人已質押再買形成槓桿疊槓桿結構，為規則庫中尚無對應的系統性過熱警示事件，若修正觸發將產生連鎖強制平倉壓力'
+      evidence_source: qualitative
