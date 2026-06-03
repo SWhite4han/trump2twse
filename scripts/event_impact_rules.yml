@@ -902,3 +902,47 @@
       stocks: {}
       last_updated_reason: '2026-06-03: 股癌EP666指出OpenAI/Anthropic以Token base計費切入企業市場，傳統SaaS業者商業模式面臨結構性重塑，掌握專屬資料者取得護城河；與現有規則「美企業軟體AI獲利驗證帶動IGV強勢」不同，此為產業洗牌機制（誰輸誰贏），而非單純獲利驗證；IGV已突破確認資金輪動進場'
       evidence_source: qualitative
+  - event: 被動元件電感電阻缺口擴散全品類
+    keywords:
+      - 電感
+      - 電阻
+      - 缺貨
+      - 被動元件
+      - 短缺擴散
+      - 乾坤
+      - 奇力新
+    impact:
+      direction: bullish
+      description: 電感電阻納入缺貨清單，台系電感電阻廠接單能見度拉長、漲價預期形成，帶動股價重估
+      sectors:
+        - passive_components
+        - inductors
+        - resistors
+      stocks:
+        inductors:
+          - '2456'
+          - '2452'
+        resistors:
+          - '2437'
+      last_updated_reason: '2026-06-03: EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列，被動元件短缺範疇從電容類擴至電感電阻，供應鏈衝擊面加寬，且江海電容備忘錄指出全球缺口約20%+'
+      evidence_source: qualitative
+  - event: 被動元件2018超級循環毛利率重估升評
+    keywords:
+      - 2018超級循環
+      - 毛利率重估
+      - 國巨
+      - B/B ratio
+      - EPS上修
+      - 目標價
+    impact:
+      direction: bullish
+      description: 2018超級循環毛利率作為估值天花板參考，帶動被動元件廠EPS目標大幅上修，誘發機構買盤
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '3026'
+      last_updated_reason: '2026-06-03: EP665以2018年國巨毛利率6X%為類比上限，搭配B/B ratio上拉（特規品稼動90%、標準品80%），市場開始以2018超級循環框架重新試算EPS與目標價，觸發分析師調升評等與資金進場'
+      evidence_source: qualitative
