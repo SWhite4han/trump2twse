@@ -63,6 +63,7 @@
       - "export"
       - "出口"
       - "貿易戰"
+    max_daily_triggers: 2
     impact:
       direction: "bearish"
       description: "台灣EMS與ODM廠以美國為主要終端市場，關稅提高壓縮品牌客戶訂單與代工利潤。"
