@@ -847,3 +847,58 @@
           - '2308'
       last_updated_reason: '2026-05-31: 股癌EP665明確指出市場已不再以電動車出貨量評估Tesla/Musk概念，重心轉移至能源儲存、人形機器人、自動駕駛，台灣相關供應鏈獲新敘事支撐'
       evidence_source: qualitative
+  - event: Trump對歐盟汽車關稅升至25%
+    keywords:
+      - EU汽車關稅
+      - 25%
+      - 歐盟
+      - Trump
+      - 車用供應鏈
+    impact:
+      direction: bearish
+      description: 歐系車廠成本驟升壓縮出貨量，可能削減零組件採購，台廠車用電子訂單面臨能見度下滑風險
+      sectors:
+        - 車用電子
+        - 汽車零組件
+      stocks: {}
+      last_updated_reason: '2026-06-03: CNBC確認Trump宣示對EU汽車加徵25%關稅，衝擊歐系車廠美國市場競爭力，可能加速在地化採購或削減產量，重塑車用電子供應鏈訂單走向，與現有規則中全球關稅框架不同，此為針對歐盟汽車業的定向政策衝擊'
+      evidence_source: qualitative
+  - event: 軌道衛星AI伺服器散熱太陽能板供應鏈卡位
+    keywords:
+      - SpaceX
+      - 軌道衛星
+      - AI伺服器
+      - 散熱片
+      - 太陽能板
+      - Neo Cloud
+      - 太空運算
+    impact:
+      direction: bullish
+      description: 軌道AI伺服器催生超規格散熱模組與太空級太陽能板需求，台灣散熱及相關零組件廠商具備卡位機會
+      sectors:
+        - 散熱
+        - 太空零組件
+        - 太陽能
+      stocks: {}
+      last_updated_reason: '2026-06-03: 股癌EP665明確指出SpaceX衛星AI伺服器散熱片規格超大、太陽能板需求龐大，且已在供應鏈見到蛛絲馬跡，Neo
+        Cloud估值邏輯浮現；此為超越原有SpaceX IPO概念框架的具體零組件供應鏈機會，聚焦散熱與能源模組端'
+      evidence_source: qualitative
+  - event: AI Token計費顛覆傳統SaaS競爭格局
+    keywords:
+      - Token計費
+      - SaaS洗牌
+      - OpenAI
+      - Anthropic
+      - IGV
+      - 資料護城河
+      - 軟體輪動
+    impact:
+      direction: bullish
+      description: 
+        Token計費模式擠壓傳統軟體訂閱收入，資料護城河成新估值核心，推升AI原生軟體及後端雲端基礎建設需求，資金持續流入IGV相關概念
+      sectors:
+        - 雲端基礎建設
+        - AI軟體
+      stocks: {}
+      last_updated_reason: '2026-06-03: 股癌EP666指出OpenAI/Anthropic以Token base計費切入企業市場，傳統SaaS業者商業模式面臨結構性重塑，掌握專屬資料者取得護城河；與現有規則「美企業軟體AI獲利驗證帶動IGV強勢」不同，此為產業洗牌機制（誰輸誰贏），而非單純獲利驗證；IGV已突破確認資金輪動進場'
+      evidence_source: qualitative
