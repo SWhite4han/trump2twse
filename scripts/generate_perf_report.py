@@ -15,6 +15,7 @@ from scripts.lib.config import config
 from scripts.track_recommendation_performance import MAX_WATCH_DAYS
 
 CAPITAL_PER_TRADE = 100_000  # 每筆假設投入 10 萬
+BASELINE_DATE     = "20260514"  # TA+LLM 系統正式上線日，之前資料不計入績效基準
 
 PERF_STATUS_EMOJI = {
     "triggered_target": "✅ 達標",
@@ -60,30 +61,73 @@ def _load_open_positions() -> list[dict]:
         return json.load(fp)
 
 
-def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    triggered = [r for r in rows if r["close_reason"] not in ("not_triggered", "no_data")]
-    target_hits = sum(1 for r in triggered if r["close_reason"] == "triggered_target")
-    stop_hits   = sum(1 for r in triggered if r["close_reason"] == "triggered_stop")
+def _compute_stats(rows: list[dict]) -> dict:
+    """計算一組 rows 的績效指標（只計算已進場且已結案的交易）。"""
+    closed = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
+    target_hits = sum(1 for r in closed if r["close_reason"] == "triggered_target")
+    stop_hits   = sum(1 for r in closed if r["close_reason"] == "triggered_stop")
 
-    days = sorted({r["report_date"] for r in rows})
-    hit_rate  = f"{target_hits/len(triggered)*100:.0f}%" if triggered else "—"
-    stop_rate = f"{stop_hits/len(triggered)*100:.0f}%"   if triggered else "—"
-
-    # TWD P&L（只算有進場且已結案的）
-    total_pnl = 0.0
-    pnl_count = 0
-    for r in triggered:
+    gains, losses, pct_list = [], [], []
+    for r in closed:
         try:
-            ep = float(r["actual_entry_price"])
-            cp = float(r.get("exit_price") or r["actual_close"])
-            is_sell = r.get("action") == "觀察賣出"
-            raw = (ep - cp) / ep if is_sell else (cp - ep) / ep
-            total_pnl += raw * CAPITAL_PER_TRADE
-            pnl_count += 1
-        except (TypeError, ValueError, ZeroDivisionError):
-            pass
-    pnl_str = f"{total_pnl:+,.0f} 元（{pnl_count} 筆，每筆 {CAPITAL_PER_TRADE//10000} 萬）" if pnl_count else "—"
+            pnl_twd = float(r.get("pnl_twd") or 0)
+            pnl_pct = float(r.get("pnl_pct") or 0)
+        except (ValueError, TypeError):
+            # fallback：從進出場價計算
+            try:
+                ep = float(r["actual_entry_price"])
+                cp = float(r.get("exit_price") or r.get("actual_close") or 0)
+                is_sell = r.get("action") == "觀察賣出"
+                raw = (ep - cp) / ep if is_sell else (cp - ep) / ep
+                pnl_twd = round(raw * CAPITAL_PER_TRADE, 0)
+                pnl_pct = round(raw * 100, 2)
+            except (ValueError, TypeError, ZeroDivisionError):
+                continue
+        if pnl_twd > 0:
+            gains.append(pnl_twd)
+        elif pnl_twd < 0:
+            losses.append(pnl_twd)
+        pct_list.append(pnl_pct)
+
+    total_pnl = sum(gains) + sum(losses)
+    profit_factor = (sum(gains) / abs(sum(losses))) if losses else None
+    avg_pct = (sum(pct_list) / len(pct_list)) if pct_list else None
+
+    return {
+        "closed": len(closed),
+        "target_hits": target_hits,
+        "stop_hits": stop_hits,
+        "total_pnl": total_pnl,
+        "profit_factor": profit_factor,
+        "avg_pct": avg_pct,
+        "pnl_count": len(pct_list),
+    }
+
+
+def _fmt_stats_rows(s: dict) -> list[str]:
+    n = s["closed"]
+    hit_rate  = f"{s['target_hits']/n*100:.0f}%" if n else "—"
+    stop_rate = f"{s['stop_hits']/n*100:.0f}%"  if n else "—"
+    pf_str    = f"{s['profit_factor']:.2f}" if s["profit_factor"] is not None else "—"
+    avg_str   = f"{s['avg_pct']:+.1f}%" if s["avg_pct"] is not None else "—"
+    pnl_str   = f"{s['total_pnl']:+,.0f} 元（{s['pnl_count']} 筆）" if s["pnl_count"] else "—"
+    return [
+        f"| 完整交易筆數（有進出場）| {n} |",
+        f"| 達標率 | {hit_rate} |",
+        f"| 停損率 | {stop_rate} |",
+        f"| Profit Factor | {pf_str} |",
+        f"| 平均每筆損益 | {avg_str} |",
+        f"| 模擬損益合計 | {pnl_str} |",
+    ]
+
+
+def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
+    now  = datetime.now().strftime("%Y-%m-%d %H:%M")
+    days = sorted({r["report_date"] for r in rows})
+
+    stats_all      = _compute_stats(rows)
+    baseline_rows  = [r for r in rows if r.get("report_date", "") >= BASELINE_DATE]
+    stats_baseline = _compute_stats(baseline_rows)
 
     lines: list[str] = [
         "# Performance Report",
@@ -96,16 +140,25 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         f"|---|---|",
         f"| 觀察天數 | {len(days)} 天（{days[0] if days else '—'} ～ {days[-1] if days else '—'}）|",
         f"| 總建議筆數 | {len(rows)} |",
-        f"| 觸發進場 | {len(triggered)} |",
-        f"| 達標率 | {hit_rate} |",
-        f"| 停損率 | {stop_rate} |",
-        f"| 模擬損益 | {pnl_str} |",
+        "",
+        f"### 全期績效",
+        "",
+        "| 項目 | 數值 |",
+        "|---|---|",
+        *_fmt_stats_rows(stats_all),
+        "",
+        f"### 基準期績效（≥{BASELINE_DATE}，TA+LLM 定價後）",
+        "",
+        "| 項目 | 數值 |",
+        "|---|---|",
+        *_fmt_stats_rows(stats_baseline),
         "",
     ]
 
-    # 各規則勝率
+    # 各規則勝率（只統計有進出場的交易）
+    closed_rows = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
     by_rule: dict[str, list[dict]] = defaultdict(list)
-    for r in triggered:
+    for r in closed_rows:
         by_rule[r.get("rule_id", "未知")].append(r)
 
     if by_rule:

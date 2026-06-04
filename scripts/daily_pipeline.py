@@ -321,27 +321,47 @@ def _step_match_rules(matched_events: list[dict]) -> list[dict]:
     recommendations: list[dict] = []
     seen_codes: set[str] = set()
 
+    existing = _load_open_positions()
+    active_pairs: set[tuple[str, str]] = {
+        (p["code"], p["rule_id"])
+        for p in existing
+        if p.get("state") in ("watching", "holding")
+    }
+    rule_counts: dict[str, int] = {}
+
     for ev in matched_events:
         if ev.get("confidence", 0) < 0.4:
             continue
         rule = rule_map.get(ev["event"])
         if not rule:
             continue
+
+        rule_id = ev["event"]
+        max_triggers = rule.get("max_daily_triggers")
+
+        if max_triggers and rule_counts.get(rule_id, 0) >= max_triggers:
+            continue
+
         stocks = rule.get("impact", {}).get("stocks", {})
         direction = ev.get("direction") or rule["impact"].get("direction", "mixed")
 
         for sector, codes in stocks.items():
             for code in codes:
+                if max_triggers and rule_counts.get(rule_id, 0) >= max_triggers:
+                    break
                 if code in seen_codes:
                     continue
+                if (code, rule_id) in active_pairs:
+                    continue
                 seen_codes.add(code)
+                rule_counts[rule_id] = rule_counts.get(rule_id, 0) + 1
                 action = _direction_to_action(direction, sector)
                 recommendations.append({
                     "code": code,
                     "name": "",  # 由 Step 4 填入
                     "action": action,
                     "sector": sector,
-                    "rule_id": ev["event"],
+                    "rule_id": rule_id,
                     "confidence": ev.get("confidence", 0.5),
                     "event_summary": ev.get("summary", ""),
                     "entry_low": None,
@@ -350,7 +370,7 @@ def _step_match_rules(matched_events: list[dict]) -> list[dict]:
                     "stop_loss": None,
                 })
 
-    print(f"       產生 {len(recommendations)} 筆建議")
+    print(f"       產生 {len(recommendations)} 筆建議（現有追蹤 {len(active_pairs)} 對）")
     return recommendations
 
 
@@ -534,8 +554,8 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         "- 觀察買進：進場接近 MA20 支撐，目標近20日高點，停損 MA60 下方\n"
         "- 觀察賣出：提供合理減碼價位，停損設在近期壓力上方\n"
         "- 停看等：提供關鍵支撐/壓力區間作為參考\n\n"
-        "【重要限制】台股每日漲跌幅 ±10%，進場區間（entry_low / entry_high）必須在現價的 90%～110% 以內。"
-        "若 MA20 遠低於現價（股票過熱），entry 仍需設在現價 -10% 以內的可執行區間，"
+        "【重要限制】台股每日漲跌幅 ±10%，進場區間（entry_low / entry_high）必須在現價的 95%～110% 以內。"
+        "若 MA20 遠低於現價（股票過熱），entry 仍需設在現價 -5% 以內的可執行區間，"
         "並在 reason 中說明需等回測，不可直接寫出遙不可及的 MA20 價位。\n\n"
         "只輸出 JSON 陣列，不要其他說明文字：\n"
         '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"reason":"一句話"}]'
@@ -557,10 +577,10 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
                 for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
                     if item.get(key) is not None:
                         rec[key] = item[key]
-            # 後處理：硬截斷進場價到現價 ±10%（台股漲跌幅限制）
+            # 後處理：硬截斷進場價，下緣不超過 -5%（避免等不到的回測點）
             close = rec.get("last_close")
             if close:
-                floor = round(close * 0.90, 1)
+                floor = round(close * 0.95, 1)
                 ceil  = round(close * 1.10, 1)
                 if rec.get("entry_low") is not None:
                     rec["entry_low"] = max(floor, min(ceil, rec["entry_low"]))

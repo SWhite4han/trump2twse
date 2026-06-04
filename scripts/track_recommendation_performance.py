@@ -308,6 +308,15 @@ def _close(pos: dict, reason: str, price: Optional[dict], today: str) -> None:
 # CSV（結案記錄）
 # --------------------------------------------------------------------------- #
 
+DEFAULT_FIELDNAMES = [
+    "report_date", "code", "name", "rule_id", "action",
+    "entry_low", "entry_high", "target", "stop_loss",
+    "entry_date", "actual_entry_price", "actual_close", "exit_price",
+    "close_reason", "close_date",
+    "pnl_pct", "pnl_twd", "days_watched", "confidence",
+]
+
+
 def _save_csv(closed: list[dict]) -> None:
     if not closed:
         return
@@ -316,20 +325,16 @@ def _save_csv(closed: list[dict]) -> None:
     perf_dir.mkdir(parents=True, exist_ok=True)
     csv_file  = perf_dir / f"{month}.csv"
 
-    fieldnames = [
-        "report_date", "code", "name", "rule_id", "action",
-        "entry_low", "entry_high", "target", "stop_loss",
-        "entry_date", "actual_entry_price", "actual_close", "exit_price",
-        "close_reason", "close_date",
-        "pnl_pct", "pnl_twd", "days_watched", "confidence",
-    ]
-
-    # 讀取已存在的 (report_date, code) 集合，防止重複寫入
+    # 讀取已存在的 header（保持 schema 一致），同時收集已有 (report_date, code) 集合
     existing_keys: set[tuple] = set()
     if csv_file.exists():
         with open(csv_file, newline="", encoding="utf-8") as f:
-            for row in csv.DictReader(f):
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or DEFAULT_FIELDNAMES
+            for row in reader:
                 existing_keys.add((row["report_date"], row["code"]))
+    else:
+        fieldnames = DEFAULT_FIELDNAMES
 
     new_rows = [r for r in closed if (r.get("report_date"), r.get("code")) not in existing_keys]
     if not new_rows:
