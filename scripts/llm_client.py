@@ -20,12 +20,14 @@ from scripts.lib.config import config
 # 公開介面
 # --------------------------------------------------------------------------- #
 
-def analyze(prompt: str, context: dict[str, Any] | None = None) -> str:
+def analyze(prompt: str, context: dict[str, Any] | None = None,
+            model: str | None = None) -> str:
     """呼叫 LLM 分析。
 
     Args:
         prompt: 系統 / 使用者指令（可含 context 的格式化佔位符）。
         context: 額外資料（新聞、規則清單等），會序列化後附在 prompt 末尾。
+        model: 指定模型 ID（如 "claude-opus-4-7"），None 則使用各 backend 預設值。
 
     Returns:
         模型回覆的純文字字串。
@@ -34,9 +36,9 @@ def analyze(prompt: str, context: dict[str, Any] | None = None) -> str:
     backend = config.llm_backend.lower()
 
     if backend == "claude_code":
-        return _call_claude_code(full_prompt)
+        return _call_claude_code(full_prompt, model=model)
     if backend in ("cowork", "claude_api"):
-        return _call_anthropic(full_prompt)
+        return _call_anthropic(full_prompt, model=model)
     if backend == "ollama":
         return _call_ollama(full_prompt)
     if backend == "stub":
@@ -55,10 +57,15 @@ def _build_prompt(prompt: str, context: dict | None) -> str:
     return f"{prompt}\n\n---\n{ctx_text}"
 
 
-def _call_claude_code(prompt: str) -> str:
+_DEFAULT_CLAUDE_CODE_MODEL = "claude-sonnet-4-6"
+_DEFAULT_API_MODEL         = "claude-sonnet-4-6"
+
+
+def _call_claude_code(prompt: str, model: str | None = None) -> str:
     import subprocess
+    _model = model or _DEFAULT_CLAUDE_CODE_MODEL
     result = subprocess.run(
-        ["claude", "-p", "--output-format", "text", prompt],
+        ["claude", "-p", "--output-format", "text", "--model", _model, prompt],
         capture_output=True, text=True, timeout=120,
     )
     if result.returncode != 0:
@@ -66,7 +73,7 @@ def _call_claude_code(prompt: str) -> str:
     return result.stdout.strip()
 
 
-def _call_anthropic(prompt: str) -> str:
+def _call_anthropic(prompt: str, model: str | None = None) -> str:
     try:
         import anthropic  # type: ignore
     except ImportError as e:
@@ -82,7 +89,7 @@ def _call_anthropic(prompt: str) -> str:
 
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
-        model="claude-sonnet-4-6",
+        model=model or _DEFAULT_API_MODEL,
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )

@@ -40,6 +40,64 @@ CLOSE_REASON_LABEL = {
 
 OPEN_POSITIONS_FILE = lambda: config.data_dir / "performance" / "open_positions.json"
 
+ACTION_SELL = "觀察賣出"
+ACTION_BUY  = "觀察買進"
+
+
+# --------------------------------------------------------------------------- #
+# 進出場判斷輔助函式
+# --------------------------------------------------------------------------- #
+
+def _try_enter_position(pos: dict, lo: float, hi: float, op, today: str) -> bool:
+    """嘗試觸發進場：若今日區間重疊進場區，mutate pos 並回傳 True。"""
+    el, eh = pos.get("entry_low"), pos.get("entry_high")
+    if not (el and eh and lo is not None and hi is not None):
+        return False
+    if not (lo <= eh and hi >= el):
+        return False
+    is_sell = pos.get("action") == ACTION_SELL
+    pos["state"]      = "holding"
+    pos["entry_date"] = today
+    if op:
+        if is_sell:
+            pos["actual_entry_price"] = round(min(max(op, el), eh), 2)
+        else:
+            pos["actual_entry_price"] = round(max(min(op, eh), el), 2)
+    else:
+        pos["actual_entry_price"] = eh if not is_sell else el
+    return True
+
+
+def _check_close_triggers(pos: dict, lo: float, hi: float,
+                          price: dict, today: str,
+                          closed: list) -> bool:
+    """檢查 holding 部位是否觸達停損/目標，若是則結案並 append 到 closed，回傳 True。
+
+    停損優先（同日雙向觸達時保守假設先碰停損）。
+    """
+    target    = pos.get("target")
+    stop_loss = pos.get("stop_loss")
+    is_sell   = pos.get("action") == ACTION_SELL
+    if is_sell:
+        if stop_loss and hi is not None and hi >= stop_loss:
+            _close(pos, "triggered_stop", price, today)
+            closed.append(pos)
+            return True
+        if target and lo is not None and lo <= target:
+            _close(pos, "triggered_target", price, today)
+            closed.append(pos)
+            return True
+    else:
+        if stop_loss and lo is not None and lo <= stop_loss:
+            _close(pos, "triggered_stop", price, today)
+            closed.append(pos)
+            return True
+        if target and hi is not None and hi >= target:
+            _close(pos, "triggered_target", price, today)
+            closed.append(pos)
+            return True
+    return False
+
 
 # --------------------------------------------------------------------------- #
 # 公開介面
@@ -89,7 +147,16 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             if upd.get("new_target"):
                 pos["target"] = upd["new_target"]
             if upd.get("new_stop"):
-                pos["stop_loss"] = upd["new_stop"]
+                new_stop = upd["new_stop"]
+                el = pos.get("entry_low") or 0
+                is_sell = pos.get("action") == ACTION_SELL
+                stop_ok = (not is_sell and new_stop < el) or \
+                          (is_sell and new_stop > (pos.get("entry_high") or 0))
+                if stop_ok:
+                    pos["stop_loss"] = new_stop
+                else:
+                    print(f"[perf] 拒絕無效 stop 更新 {pos['code']}："
+                          f"new_stop={new_stop} 與進場區間倒掛，保留原值 {pos['stop_loss']}")
 
         # 逾期未進場
         pos["days_watched"] = pos.get("days_watched", 0) + 1
@@ -97,6 +164,16 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             _close(pos, "expired", price, today)
             closed.append(pos)
             continue
+
+        # 持倉超過時間視野上限（holding 專用）
+        if pos.get("state") == "holding" and pos.get("entry_date"):
+            entry_dt = datetime.strptime(pos["entry_date"], "%Y%m%d")
+            today_dt = datetime.strptime(today, "%Y%m%d")
+            days_held = (today_dt - entry_dt).days
+            if days_held >= pos.get("max_holding_days", 90):
+                _close(pos, "expired", price, today)
+                closed.append(pos)
+                continue
 
         # 無今日行情（休市）→ 繼續持倉
         if not price or price.get("close") is None:
@@ -109,49 +186,12 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
 
         # 嘗試進場
         if pos.get("state") == "watching":
-            el, eh = pos.get("entry_low"), pos.get("entry_high")
-            if el and eh and lo is not None and hi is not None:
-                if lo <= eh and hi >= el:
-                    pos["state"]      = "holding"
-                    pos["entry_date"] = today
-                    is_sell = pos.get("action") == "觀察賣出"
-                    if op:
-                        if is_sell:
-                            # 賣出：越高越好，取 min(max(open, entry_low), entry_high)
-                            pos["actual_entry_price"] = round(min(max(op, el), eh), 2)
-                        else:
-                            # 買入：越低越好，取 max(min(open, entry_high), entry_low)
-                            pos["actual_entry_price"] = round(max(min(op, eh), el), 2)
-                    else:
-                        pos["actual_entry_price"] = eh if not is_sell else el
+            _try_enter_position(pos, lo, hi, op, today)
 
-        # 判斷結案（holding）—— 停損優先（同日雙向觸達時保守假設先碰停損）
+        # 判斷結案（holding）—— 停損優先
         if pos.get("state") == "holding":
-            target    = pos.get("target")
-            stop_loss = pos.get("stop_loss")
-            is_sell   = pos.get("action") == "觀察賣出"
-            if is_sell:
-                # 賣出停損：股價漲到 stop_loss
-                if stop_loss and hi is not None and hi >= stop_loss:
-                    _close(pos, "triggered_stop", price, today)
-                    closed.append(pos)
-                    continue
-                # 賣出達標：股價跌到 target
-                if target and lo is not None and lo <= target:
-                    _close(pos, "triggered_target", price, today)
-                    closed.append(pos)
-                    continue
-            else:
-                # 買入停損：股價跌到 stop_loss
-                if stop_loss and lo is not None and lo <= stop_loss:
-                    _close(pos, "triggered_stop", price, today)
-                    closed.append(pos)
-                    continue
-                # 買入達標：股價漲到 target
-                if target and hi is not None and hi >= target:
-                    _close(pos, "triggered_target", price, today)
-                    closed.append(pos)
-                    continue
+            if _check_close_triggers(pos, lo, hi, price, today, closed):
+                continue
 
         still_open.append(pos)
 
@@ -172,6 +212,8 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             "stop_loss":          rec.get("stop_loss"),
             "report_date":        report_date,
             "confidence":         rec.get("confidence"),
+            "horizon":            rec.get("horizon", "trend"),
+            "max_holding_days":   rec.get("max_holding_days", 90),
             "state":              "watching",
             "entry_date":         None,
             "actual_entry_price": None,
@@ -183,39 +225,10 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
         if price and price.get("low") is not None:
             lo, hi = price["low"], price["high"]
             op = price.get("open")
-            is_sell = pos.get("action") == "觀察賣出"
-            el, eh  = pos["entry_low"], pos["entry_high"]
-            if lo <= eh and hi >= el:
-                pos["state"]      = "holding"
-                pos["entry_date"] = today
-                if op:
-                    if is_sell:
-                        pos["actual_entry_price"] = round(min(max(op, el), eh), 2)
-                    else:
-                        pos["actual_entry_price"] = round(max(min(op, eh), el), 2)
-                else:
-                    pos["actual_entry_price"] = eh if not is_sell else el
-
+            if _try_enter_position(pos, lo, hi, op, today):
                 # 同日結案判斷（停損優先）
-                target, stop_loss = pos.get("target"), pos.get("stop_loss")
-                if is_sell:
-                    if stop_loss and hi >= stop_loss:
-                        _close(pos, "triggered_stop", price, today)
-                        closed.append(pos)
-                        continue
-                    if target and lo <= target:
-                        _close(pos, "triggered_target", price, today)
-                        closed.append(pos)
-                        continue
-                else:
-                    if stop_loss and lo <= stop_loss:
-                        _close(pos, "triggered_stop", price, today)
-                        closed.append(pos)
-                        continue
-                    if target and hi >= target:
-                        _close(pos, "triggered_target", price, today)
-                        closed.append(pos)
-                        continue
+                if _check_close_triggers(pos, lo, hi, price, today, closed):
+                    continue
 
         still_open.append(pos)
 
@@ -296,7 +309,7 @@ def _close(pos: dict, reason: str, price: Optional[dict], today: str) -> None:
     if entry_p and exit_p:
         try:
             ep, cp   = float(entry_p), float(exit_p)
-            is_sell  = pos.get("action") == "觀察賣出"
+            is_sell  = pos.get("action") == ACTION_SELL
             raw      = (ep - cp) / ep if is_sell else (cp - ep) / ep
             pos["pnl_pct"] = round(raw * 100, 2)
             pos["pnl_twd"] = round(raw * CAPITAL_PER_TRADE, 0)
@@ -314,6 +327,7 @@ DEFAULT_FIELDNAMES = [
     "entry_date", "actual_entry_price", "actual_close", "exit_price",
     "close_reason", "close_date",
     "pnl_pct", "pnl_twd", "days_watched", "confidence",
+    "horizon", "max_holding_days",
 ]
 
 

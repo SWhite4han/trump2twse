@@ -1,951 +1,986 @@
-  - event: "美伊/中東衝突"
-    keywords:
-      - "iran"
-      - "war"
-      - "conflict"
-      - "military"
-      - "attack"
-      - "missile"
-      - "伊朗"
-      - "戰爭"
-      - "衝突"
-      - "軍事"
-      - "攻擊"
-      - "飛彈"
-      - "中東"
-    impact:
-      direction: "bullish" # 對特定板塊為利多
-      description: "中東地區的軍事衝突通常會刺激全球的國防、石油和黃金市場。"
-      sectors: ["defense", "shipping", "oil", "gold"]
-      stocks:
-        defense: # 國防/軍工股
-          - "8033" # 漢翔
-          - "2634" # 亞航
-          - "4556" # 精剛
-        shipping: # 航運股 (因紅海等區域不穩)
-          - "2603" # 長榮
-          - "2609" # 陽明
-        oil: # 石油/塑化股
-          - "1301" # 台塑
-          - "1303" # 南亞
-        gold: # 黃金相關ETF
-          - "00635U" # 期元大S&P黃金
+- event: "美伊/中東衝突"
+  keywords:
+  - "iran"
+  - "war"
+  - "conflict"
+  - "military"
+  - "attack"
+  - "missile"
+  - "伊朗"
+  - "戰爭"
+  - "衝突"
+  - "軍事"
+  - "攻擊"
+  - "飛彈"
+  - "中東"
+  horizon: event
+  impact:
+    direction: "bullish"   # 對特定板塊為利多
+    description: "中東地區的軍事衝突通常會刺激全球的國防、石油和黃金市場。"
+    sectors: ["defense", "shipping", "oil", "gold"]
+    stocks:
+      defense:   # 國防/軍工股
+      - "8033"     # 漢翔
+      - "2634"     # 亞航
+      - "4556"     # 精剛
+      shipping:   # 航運股 (因紅海等區域不穩)
+      - "2603"     # 長榮
+      - "2609"     # 陽明
+      oil:   # 石油/塑化股
+      - "1301"     # 台塑
+      - "1303"     # 南亞
+      gold:   # 黃金相關ETF
+      - "00635U"     # 期元大S&P黃金
 
-  - event: "美國對中半導體禁令"
-    keywords:
-      - "chip ban"
-      - "semiconductor restriction"
-      - "export control"
-      - "entity list"
-      - "禁令"
-      - "制裁"
-      - "晶片法案"
-      - "實體清單"
-    impact:
-      direction: "mixed" # 影響複雜
-      description: "對美國技術依賴度高的中國供應鏈公司可能受創，但台灣的轉單或去美化供應鏈可能受益。"
-      sectors: ["foundry", "ic_design"]
-      stocks:
-        impacted_positive: # 可能有轉單效益
-          - "2330" # 台積電
-          - "2303" # 聯電
-        impacted_negative: # 中國業務佔比較高或供應鏈相關
-          - "3711" # 日月光投控
-          - "2454" # 聯發科 (需觀察高階晶片市場反應)
+- event: "美國對中半導體禁令"
+  keywords:
+  - "chip ban"
+  - "semiconductor restriction"
+  - "export control"
+  - "entity list"
+  - "禁令"
+  - "制裁"
+  - "晶片法案"
+  - "實體清單"
+  horizon: trend
+  impact:
+    direction: "mixed"   # 影響複雜
+    description: "對美國技術依賴度高的中國供應鏈公司可能受創，但台灣的轉單或去美化供應鏈可能受益。"
+    sectors: ["foundry", "ic_design"]
+    stocks:
+      impacted_positive:   # 可能有轉單效益
+      - "2330"     # 台積電
+      - "2303"     # 聯電
+      impacted_negative:   # 中國業務佔比較高或供應鏈相關
+      - "3711"     # 日月光投控
+      - "2454"     # 聯發科 (需觀察高階晶片市場反應)
 
-  - event: "美國東南亞貿易協商停滯"
-    keywords:
-      - "Southeast Asia"
-      - "trade deal"
-      - "Vietnam"
-      - "東南亞"
-      - "供應鏈轉移"
-      - "關稅豁免"
-      - "越南"
-    impact:
-      direction: "bearish"
-      description: "台廠赴東南亞設廠以規避關稅的策略效益下降，供應鏈重組進程受阻。"
-      sectors: ["EMS", "PCB"]
-      stocks:
-        EMS:
-          - "2317" # 鴻海
-        PCB:
-          - "3034" # 聯詳
-  - event: 美東南亞貿易協議僵局
-    keywords:
-      - Southeast Asia
-      - trade deal
-      - Vietnam
-      - 東南亞
-      - 供應鏈轉移
-      - 關稅豁免
-    impact:
-      direction: bearish
-      description: 轉移東南亞產能的台廠若無法獲關稅豁免，供應鏈轉移成本無法抵銷關稅壓力
-      sectors:
-        - electronics_manufacturing
-        - supply_chain
-      stocks:
-        electronics_manufacturing:
-          - '2317'
-      last_updated_reason: '2026-05-07: Foreign Policy報導美國與東南亞貿易談判陷入僵局，影響已遷廠越南、泰國的台灣供應鏈廠商藉東南亞規避關稅的策略效益'
-      evidence_source: qualitative
-  - event: AI 伺服器需求爆發帶動台積電先進封裝
-    keywords:
-      - CoWoS
-      - AI server
-      - advanced packaging
-      - Blackwell
-      - 先進封裝
-      - AI伺服器
-      - 台積電
-    impact:
-      direction: bullish
-      description: AI GPU 需求帶動 CoWoS 先進封裝，台積電獨家供應，聯發科 AI 晶片設計受益
-      sectors:
-        - foundry
-        - ic_design
-        - packaging
-      stocks:
-        foundry:
-          - '2330'
-        ic_design:
-          - '2454'
-        packaging:
-          - '3711'
-      last_updated_reason: '2026-05-14: AI 伺服器需求帶動 CoWoS 先進封裝，台積電獨家產能造成轉單效益，Morgan
-        Stanley 上調目標價'
-      evidence_source: qualitative
-  - event: 歐美貿易關稅衝突升級
-    keywords:
-      - EU tariffs
-      - EU-US trade deal
-      - Trump trade
-      - 歐盟關稅
-      - 貿易報復
-    impact:
-      direction: bearish
-      description: 歐盟若對美實施報復關稅，將壓縮台灣供應鏈在歐美市場的雙邊出口空間，並可能引發歐系客戶縮減採購
-      sectors:
-        - electronics_export
-        - machinery
-      stocks: {}
-      last_updated_reason: '2026-05-14: 多篇報導（EUobserver、politico.eu、歐洲議會）同步指出歐盟與Trump關稅談判瀕臨破裂，EU-US相互報復關稅風險升高，與現有規則中的東南亞僵局屬不同地緣軸線，對台灣出口歐洲的電子與機械廠商形成獨立風險敞口'
-      evidence_source: qualitative
-  - event: 美法院裁定Trump全球關稅違法
-    keywords:
-      - trade court
-      - 10% global tariff illegal
-      - Section 122
-      - IEEPA
-      - 關稅違法
-      - 裁定撤銷
-    impact:
-      direction: bullish
-      description: 關稅違法裁定若上訴維持，台灣電子/半導體出口商成本壓力解除，訂單能見度回升
-      sectors:
-        - semiconductors
-        - electronics
-        - servers
-      stocks:
-        semiconductors:
-          - '2330'
-        electronics:
-          - '2317'
-          - '2382'
-      last_updated_reason: '2026-05-14: 美國貿易法院（及聯邦法院）多次裁定Trump依IEEPA/Section 122實施的10%全球關稅違法，若裁定確立將導致關稅被取消，直接降低台灣出口商成本壓力，為現有『Trump全球關稅政策衝擊出口』的反向事件，影響方向截然不同，必須獨立追蹤'
-      evidence_source: qualitative
-  - event: 美法院封鎖Trump關稅令
-    keywords:
-      - court blocks tariff
-      - 10% tariff struck down
-      - trade superpower
-      - judges
-    impact:
-      direction: bullish
-      description: 關稅若被法院封鎖，台灣對美出口壓力解除，電子/科技出口股受惠
-      sectors:
-        - electronics
-        - semiconductors
-      stocks:
-        electronics:
-          - '2317'
-          - '2382'
-        semiconductors:
-          - '2330'
-      last_updated_reason: '2026-05-14: 多家主流媒體（CNN、Al Jazeera、Financial Post）證實美國法院已裁定阻擋/暫停
-        Trump 10% 全球關稅，動搖關稅政策執行力，屬全新法律風險事件，現有規則僅涵蓋關稅政策本身衝擊而未涵蓋司法逆轉情境'
-      evidence_source: qualitative
-  - event: 美中貿易停火脆弱化
-    keywords:
-      - fragile truce
-      - Trump China visit
-      - US-China trade
-      - bilateral
-    impact:
-      direction: bearish
-      description: 美中貿易停火若破裂，兩岸供應鏈受波及，重度依賴中美兩端的台廠首當其衝
-      sectors:
-        - electronics
-        - supply_chain
-      stocks:
-        electronics:
-          - '2317'
-      last_updated_reason: '2026-05-14: BBC 報導 Trump 訪中將測試脆弱停火，與「美國對中半導體禁令」不同，聚焦整體雙邊貿易關係是否崩潰，為台灣供應鏈帶來系統性不確定性'
-      evidence_source: qualitative
-  - event: 美國法院裁定阻擋Trump關稅權
-    keywords:
-      - court ruling
-      - tariff blocked
-      - judicial review
-      - IEEPA
-      - 關稅違憲
-    impact:
-      direction: bullish
-      description: 法院阻止關稅執行，降低台灣出口商成本壓力，帶動電子製造族群估值修復
-      sectors:
-        - semiconductors
-        - electronics_manufacturing
-        - supply_chain
-      stocks:
-        semiconductors:
-          - '2330'
-          - '2454'
-        electronics_manufacturing:
-          - '2317'
-          - '2382'
-      last_updated_reason: '2026-05-14: 多家聯邦法院接連裁定Trump 10%全球關稅違憲或違法，若判決確立將大幅削減出口關稅壓力，對台灣電子/半導體出口商構成直接利多，與現有規則「衝擊出口」方向相反，屬新型反轉事件'
-      evidence_source: qualitative
-  - event: 美中貿易脆弱休戰談判
-    keywords:
-      - US-China truce
-      - fragile truce
-      - Trump China visit
-      - 美中談判
-      - 貿易休戰
-    impact:
-      direction: bullish
-      description: 美中緊張緩和使台廠供應鏈備料週期拉長，短期拉貨效應帶動半導體與組裝廠
-      sectors:
-        - semiconductors
-        - electronics_manufacturing
-      stocks:
-        semiconductors:
-          - '2330'
-          - '2303'
-        electronics_manufacturing:
-          - '2317'
-      last_updated_reason: '2026-06-04: 累積達標率 83%（6 筆），調整信心門檻 0.40 → 0.30'
-      evidence_source: quant
-    min_confidence: 0.3
-  - event: Vera Rubin換代觸發被動元件超缺
-    keywords:
-      - Vera Rubin
-      - MLCC
-      - 被動元件缺貨
-      - 鋁電容漲價
-      - 排擠效應
-      - 包產能
-    impact:
-      direction: bullish
-      description: AI GPU換代帶動被動元件用量倍增，供給瓶頸推動漲價，台系廠商跟漲受益
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-          - '2472'
-      last_updated_reason: '2026-05-14: NVIDIA Vera Rubin世代換代用量「超級無敵多」，Power廠已出現包產能行為，MLCC
-        47UF交期拉長、鋁電容Nippon Chemi-Con啟動漲價，供需失衡提前於預期（2026H2→當前）發生，且陶瓷/鉭/鋁電容、電感均同步噴出，漲價連鎖效應具體可追蹤'
-      evidence_source: qualitative
-  - event: 美法院暫停關稅封鎖令（關稅重新生效）
-    keywords:
-      - 美法院暫停封鎖
-      - 10%全球關稅
-      - 關稅重新生效
-      - 上訴法院
-    impact:
-      direction: bearish
-      description: 關稅封鎖令被高院暫停，出口型台廠關稅成本壓力再度回籠，買方觀望情緒升溫
-      sectors:
-        - export_manufacturing
-        - electronics
-      stocks: {}
-      last_updated_reason: '2026-05-14: 05/13 Al Jazeera報導美國上訴法院暫停了下級法院封鎖Trump 10%全球關稅的裁定，與已有規則「美法院封鎖Trump關稅令」方向相反，關稅再度恢復效力，對台灣出口導向產業形成新一輪壓力'
-      evidence_source: qualitative
-  - event: 功率半導體需求驅動漲價潮
-    keywords:
-      - 功率半導體漲價
-      - 德州儀器
-      - 羅姆
-      - 成熟製程
-      - 需求驅動
-      - 包產能
-    impact:
-      direction: bullish
-      description: 需求驅動漲價推動成熟製程晶圓廠稼動率與ASP雙升，台系代工廠受益
-      sectors:
-        - mature_node_foundry
-        - power_semiconductor
-      stocks:
-        mature_node_foundry:
-          - '5347'
-      last_updated_reason: '2026-05-14: 德州儀器（TI）與羅姆（Rohm）同步啟動漲價，且明確為需求驅動而非成本驅動；世界先進新廠產能已全數賣出並獲台積電技術授權，海外客戶搶先報漲包產能被拒，顯示廠方對後市有強烈預期'
-      evidence_source: qualitative
-  - event: 鋁電容日系大廠退出供應缺口漲價
-    keywords:
-      - 鋁電容
-      - OS-CON
-      - Panasonic退出
-      - Nippon Chemi-Con
-      - 漲價
-      - 立隆電
-      - 鈺邦
-    impact:
-      direction: bullish
-      description: 日系產能退出造成結構性缺口，台系鋁電容廠受惠漲價與轉單
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2472'
-          - '6690'
-      last_updated_reason: '2026-05-14: Panasonic停止OS-CON固態電容生產，Nippon Chemi-Con承接但產能不足已發起漲價，屬供給側結構性收縮，不同於Vera
-        Rubin需求面驅動的MLCC短缺'
-      evidence_source: qualitative
-  - event: 消費IC恐慌補庫存推升成熟製程稼動
-    keywords:
-      - 補庫存
-      - DDIC
-      - 成熟製程
-      - 世界先進
-      - 稼動率
-      - 漲價包產能
-    impact:
-      direction: bullish
-      description: 恐慌性補庫存拉升成熟製程晶圓廠稼動率與ASP，短期帶動獲利
-      sectors:
-        - foundry
-        - ic_design
-      stocks:
-        foundry:
-          - '5347'
-      last_updated_reason: '2026-05-14: 晶圓代工漲價預期引發下游DDIC/筆電廠商恐慌性提前拉貨，非終端需求復甦，世界先進新廠產能已全數被包，屬需求驅動漲價性質'
-      evidence_source: qualitative
-  - event: 被動元件全品類漲價聯動擴散
-    keywords:
-      - 鉭電容
-      - 電感
-      - 電阻
-      - 標準品漲價
-      - 全品類
-      - Vishay
-      - VPG
-      - Nichicon
-    impact:
-      direction: bullish
-      description: 漲價由高階MLCC向下擴散至標準品與電感電阻，低基期標準品需求彈性低，量價齊揚空間大
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-          - '2472'
-      last_updated_reason: '2026-06-04: 累積達標率 89%（9 筆），調整信心門檻 0.40 → 0.30'
-      evidence_source: quant
-    min_confidence: 0.3
-  - event: 成熟製程新廠滿載海外客包產漲價
-    keywords:
-      - 世界先進
-      - 成熟製程
-      - 包產能
-      - 台積電技轉
-      - 漲價
-      - 新廠
-      - 需求驅動
-    impact:
-      direction: bullish
-      description: 海外客戶願溢價鎖產能被拒，代表世界先進對行情預期強烈，成熟製程報價進入需求驅動漲價循環
-      sectors:
-        - foundry
-      stocks:
-        foundry:
-          - '5347'
-      last_updated_reason: '2026-05-14: EP660提到世界先進新建廠房產能已全數售罄並取得台積電技轉，且有海外客戶主動開高價求包產能卻遭拒簽約，顯示賣方議價力極強；現有規則僅涵蓋「消費IC恐慌補庫存推升稼動」，未覆蓋新廠需求驅動型漲價議題'
-      evidence_source: qualitative
-  - event: 矽晶圓業者全球同步轉強
-    keywords:
-      - 矽晶圓
-      - 環球晶
-      - 晶圓轉強
-      - 半導體週期
-      - 上游復甦
-    impact:
-      direction: bullish
-      description: 上游矽晶圓滿載反映晶圓代工排程拉長，帶動台灣矽晶圓廠訂單能見度與 ASP 同步回升
-      sectors:
-        - silicon_wafer
-      stocks:
-        silicon_wafer:
-          - '6488'
-          - '6182'
-          - '3016'
-      last_updated_reason: '2026-05-14: EP660 明確指出全球矽晶圓業者股價同步轉強，是半導體週期上行由下游（被動元件、先進封裝）擴散至上游的先行訊號；現有規則庫尚無上游矽晶圓維度的追蹤規則，可補充判斷半導體復甦的廣度與深度'
-      evidence_source: qualitative
-  - event: 美股光通強勢帶動台股光通補漲
-    keywords:
-      - 光通訊
-      - 美股光通
-      - 落後補漲
-      - 抄答案
-      - 光纖
-    impact:
-      direction: bullish
-      description: 美股光通族群持續領漲後，台灣光通族群依循記憶體/被動元件相同模式落後補漲
-      sectors:
-        - optical_communication
-      stocks:
-        optical_communication: []
-      last_updated_reason: '2026-05-14: EP661明確點出台股光通類似先前記憶體、被動元件的落後補漲節奏：美股光通持續強則台股光通將跟進，已有可操作的國際帶動台股框架'
-      evidence_source: qualitative
-  - event: 高通AI基礎建設需求爆發帶動供應鏈
-    keywords:
-      - 高通
-      - Qualcomm
-      - AI建設
-      - AI基礎建設
-      - 晶圓代工
-      - 非AI PC
-    impact:
-      direction: bullish
-      description: 高通AI基建需求驅動晶圓代工及IC設計供應鏈受惠，AI終端需求擴散超出伺服器單一場域
-      sectors:
-        - ic_design
-        - foundry
-      stocks:
-        foundry:
-          - '2330'
-      last_updated_reason: '2026-05-14: EP661指出高通近期大漲來自AI基礎建設需求（非AI PC），代表AI支出擴散至NVIDIA以外晶片族群，影響晶圓代工稼動與相關台廠'
-      evidence_source: qualitative
-  - event: 投信增持台積電觸發中小型股籌碼流出
-    keywords:
-      - 投信
-      - 公發書
-      - 台積電增持
-      - 籌碼重配
-      - 中小型股賣壓
-      - 汰弱留強
-    impact:
-      direction: mixed
-      description: 台積電因投信增持而獲法人買盤支撐，中小型高投信持股標的面臨停利賣壓與資金排擠。
-      sectors:
-        - semiconductor
-        - small_mid_cap
-      stocks:
-        semiconductor:
-          - '2330'
-      last_updated_reason: '2026-05-17: 股癌EP661/EP662 兩集均明確指出：投信需改公發書（2~5個月）才能增持台積電，市場資金有限，勢必從投信高持股中小型股提款，形成台積電吸金、中小股失血的雙向籌碼重配結構事件，屬台灣市場獨有微結構風險。'
-      evidence_source: qualitative
-  - event: 美股資安股全面創高帶動台股資安補漲
-    keywords:
-      - 資安
-      - CrowdStrike
-      - 創新高
-      - 族群性
-      - 軟體股
-      - 補漲
-    impact:
-      direction: bullish
-      description: 美股資安股領漲形成族群訊號，台股資安相關標的跟漲滯後補漲空間大。
-      sectors:
-        - cybersecurity
-      stocks: {}
-      last_updated_reason: '2026-05-17: 股癌EP662 明確點名 CrowdStrike 等美股資安股一大堆都在創新高，族群性已形成，與過去「美股光通帶動台股光通補漲」為同一跨市連動模式，資安族群在台股尚未充分反映。'
-      evidence_source: qualitative
-  - event: Google TPU 聯發科深度介入ASIC設計
-    keywords:
-      - Google TPU
-      - 聯發科
-      - Zebrafish
-      - Humu Fish
-      - ASIC
-      - 自研AI晶片
-    impact:
-      direction: bullish
-      description: 聯發科承接Google 
-        TPU客製ASIC設計訂單，開闢Nvidia供應鏈以外的AI晶片營收來源，帶動相關IC設計與先進封裝需求
-      sectors:
-        - IC設計
-        - AI晶片
-      stocks:
-        IC設計:
-          - '2454'
-      last_updated_reason: '2026-05-22: EP663明確點名Google TPU V8由聯發科Zebrafish對應博通Sunfish、V9由聯發科Humu
-        Fish承接，聯發科正以主力ASIC設計夥伴身份切入Google自研AI晶片供應鏈，此需求驅動與現有Nvidia生態系規則不同，屬全新事件主線'
-      evidence_source: qualitative
-  - event: Google TPU聯發科搶入AI客製晶片設計
-    keywords:
-      - Google TPU
-      - 聯發科
-      - Zebrafish
-      - Humu Fish
-      - 博通
-      - Sunfish
-      - 客製AI晶片
-      - 雲端TPU
-    impact:
-      direction: bullish
-      description: 聯發科打入Google TPU設計競爭格局，打破博通獨佔，帶動市場上修聯發科AI營收預期
-      sectors:
-        - IC_design
-      stocks:
-        IC_design:
-          - '2454'
-      last_updated_reason: '2026-05-22: 股癌EP663具體點名聯發科以Zebrafish對應Google TPU V8、Humu
-        Fish對應V9，直接與博通Sunfish競爭同一設計標案；若聯發科拿下份額，代表台廠切入超大雲端AI客製晶片供應鏈，現有規則庫中無此題材'
-      evidence_source: qualitative
-  - event: 日系大廠漲價函引爆被動元件現貨搶購
-    keywords:
-      - Panasonic漲價函
-      - 現貨掃貨
-      - 採購恐慌
-      - 電容囤積
-      - 貼牌廠商
-    impact:
-      direction: bullish
-      description: 大廠正式漲價函引爆下游恐慌補庫存與現貨囤積，強化被動元件多波段漲價循環
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-          - '3026'
-      last_updated_reason: '2026-05-23: Panasonic已對部分客戶發出正式漲價通知，直接引發採購部門緊急赴現貨市場掃貨；台灣貼牌廠商（本即向日本採購電容回台出貨）亦趁機囤積。此為需求端恐慌性搶購新觸發機制，與現有規則側重供給端斷鏈或產能退出不同，將加速供需失衡惡化並強化漲價幅度與持續性'
-      evidence_source: qualitative
-  - event: 歐美關稅談判轉向妥協緩和
-    keywords:
-      - EU妥協
-      - 關稅談判
-      - 歐美貿易協議
-      - 貿易衝突緩和
-    impact:
-      direction: bullish
-      description: 歐美關稅緊張關係緩和可改善全球貿易預期，減輕台灣科技出口廠商的訂單與匯率不確定性壓力
-      sectors:
-        - electronics_export
-        - tech_manufacturing
-      stocks: {}
-      last_updated_reason: '2026-05-23: EU於05/20主動提出妥協方案以阻止Trump進一步升高關稅，方向性與現有規則庫「歐美貿易關稅衝突升級」相反；若歐美達成貿易協議，將降低全球供應鏈不確定性，對台灣出口導向科技製造業具情緒面正向效益'
-      evidence_source: qualitative
-  - event: Anthropic首度轉獲利強化AI硬體投資循環
-    keywords:
-      - Anthropic
-      - 獲利
-      - AI泡沫
-      - 算力
-      - 硬體投資
-    impact:
-      direction: bullish
-      description: AI基礎建設回報可見度提升，刺激雲端業者持續擴大GPU/CoWoS/HBM採購，台灣AI供應鏈受惠
-      sectors:
-        - AI伺服器
-        - 先進封裝
-        - HBM記憶體模組
-      stocks:
-        AI伺服器:
-          - '2330'
-        先進封裝:
-          - '3711'
-      last_updated_reason: '2026-05-24: 最燒錢AI公司轉獲利，打臉AI泡沫論並驗證硬體設備可回本，預期帶動業者加大算力採購，延長AI硬體需求週期'
-      evidence_source: qualitative
-  - event: AI算力包產能潮擴散至OSAT封測
-    keywords:
-      - OSAT
-      - 封測
-      - 包產能
-      - 供需失衡
-      - AI伺服器
-    impact:
-      direction: bullish
-      description: AI客戶搶佔封測產能形成供需失衡，推升OSAT報價與稼動率，帶動封測股估值重評
-      sectors:
-        - 封裝測試
-      stocks:
-        封裝測試:
-          - '3711'
-          - '6239'
-          - '2328'
-      last_updated_reason: '2026-05-24: 節目明確點名包產能浪潮將從記憶體、晶圓代工、光通擴散至OSAT封測，封測廠成下一個供需瓶頸與漲價候選'
-      evidence_source: qualitative
-  - event: Google-Blackstone TPU雲端解鎖第三方算力市場
-    keywords:
-      - Google TPU
-      - Blackstone
-      - 第三方雲端
-      - 算力市場
-      - 隱私
-    impact:
-      direction: bullish
-      description: 中立第三方TPU雲端降低企業採用門檻，驅動TPU產能需求倍增，台積電及TPU供應鏈（聯發科、CoWoS）受惠
-      sectors:
-        - ASIC設計
-        - 晶圓代工
-        - AI基礎建設
-      stocks:
-        ASIC設計:
-          - '2454'
-        晶圓代工:
-          - '2330'
-      last_updated_reason: '2026-05-24: Google聯手Blackstone建立第三方TPU雲端，解決企業資料隱私顧慮，大幅擴大TPU可服務客群，外銷比例目標達三分之一，直接拉升TPU產能需求'
-      evidence_source: qualitative
-  - event: xAI Colossus算力出租確立AI硬體租賃回本模式
-    keywords:
-      - xAI
-      - Colossus
-      - 算力出租
-      - AI硬體租賃
-      - 投資回本
-    impact:
-      direction: bullish
-      description: AI硬體投資下行風險被租賃模式托底，採購方對伺服器/基礎建設投資意願提升，利好台灣AI伺服器組裝與CoWoS先進封裝供應鏈
-      sectors:
-        - ai_server
-        - advanced_packaging
-      stocks:
-        ai_server:
-          - '2317'
-          - '2382'
-          - '6669'
-        advanced_packaging:
-          - '2330'
-      last_updated_reason: '2026-05-25: EP664明確指出馬斯克Grok發展不如預期後轉租Colossus算力，鉅額投資可在1-2年內回本，確立「AI模型失敗仍可靠硬體租賃變現」新商業模式。此事件與已有規則「Anthropic首度轉獲利」機制不同：Anthropic驗證AI模型盈利，本事件驗證硬體資產本身的租賃安全邊際，為AI硬體投資提供下行保護，進一步強化買硬體意願'
-      evidence_source: qualitative
-  - event: AI伺服器電源模組推升高壓MLCC瓶頸缺口
-    keywords:
-      - 高壓MLCC
-      - 47μF
-      - 22μF
-      - AI伺服器電源
-      - 村田
-      - Semco
-      - 電源模組
-    impact:
-      direction: bullish
-      description: AI 伺服器電源供應模組對高壓 MLCC 的長期結構性需求，推升 47μF/22μF 現貨持續短缺並帶動台系被動元件廠受惠
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-          - '6173'
-      last_updated_reason: '2026-05-25: EP664 明確指出 AI 伺服器電源櫃對高壓 MLCC 用量結構性增大，47μF
-        缺到爆炸且僅由村田與 Semco 供應、22μF 同步告缺，形成有別於 Vera Rubin 換代的獨立需求驅動鏈（電源管理基礎設施，非 GPU 晶片本身）'
-      evidence_source: qualitative
-  - event: 被動元件廠商棄低階轉高階重塑供給結構
-    keywords:
-      - 被動元件轉型
-      - 高階產品
-      - 低階退出
-      - 供給結構
-      - 稼動率
-    impact:
-      direction: bullish
-      description: 廠商主動退出低階品種、集中高階，壓縮低階供給天花板，使低階品現貨溢價持續而非短暫
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-      last_updated_reason: '2026-05-25: EP663 指出高階產能吃飽後廠商可拒接低階訂單轉做高階，這是供給面結構性改變（非短期缺料），將長期壓縮低階被動元件可用產能，形成慢性缺貨溢價'
-      evidence_source: qualitative
-  - event: SpaceX IPO引爆衛星軌道AI伺服器概念
-    keywords:
-      - SpaceX
-      - IPO
-      - Neo Cloud
-      - 衛星AI伺服器
-      - 軌道算力
-      - 散熱片
-      - 太陽能板
-      - 太空運算
-    impact:
-      direction: bullish
-      description: SpaceX IPO卡位太空運算第一棒，帶動軌道衛星AI伺服器供應鏈（散熱、太陽能板）進入本夢比估值重塑期
-      sectors:
-        - 散熱模組
-        - 太空組件
-        - 衛星概念
-      stocks:
-        散熱模組:
-          - '3324'
-          - '3017'
-      last_updated_reason: '2026-05-27: EP665明確指出SpaceX高機率成為新Neo Cloud概念股，供應鏈已見蛛絲馬跡；衛星搭載AI伺服器具無限能源優勢，散熱片與太陽能板需求巨大，形成有別於地面資料中心的全新算力投資主題，現有規則庫未涵蓋此太空軌道算力脈絡'
-      evidence_source: qualitative
-  - event: 鉭電容爭議金屬退場加速MLCC結構替代
-    keywords:
-      - 鉭電容
-      - 爭議金屬
-      - 衝突礦物
-      - MLCC替代
-      - 鋁電容
-      - 驗證期壓縮
-      - B/B ratio
-    impact:
-      direction: bullish
-      description: 鉭電容被迫退出市場的替代訂單湧入MLCC與鋁電容廠，在稼動率已達80-90%時進一步推升供需缺口與毛利率
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-      last_updated_reason: '2026-05-27: 鉭為衝突礦物(conflict mineral)，EP665明確指出危機環境下客戶以資本力量壓縮驗證期快速轉向MLCC與鋁電容；此為結構性替代需求而非週期性補庫存，可延長漲價循環且現有被動元件漲價規則未捕捉此驅動機制'
-      evidence_source: qualitative
-  - event: 被動元件通路商庫存升值帶動漲停潮
-    keywords:
-      - 通路商
-      - 被動元件
-      - 漲停
-      - 庫存升值
-      - 現貨缺貨
-      - 大聯大
-      - 文曄
-    impact:
-      direction: bullish
-      description: 被動元件現貨短缺時，通路商現貨庫存跟隨漲價，庫存評價與毛利雙升，形成有別於製造端的第二波漲價受益
-      sectors:
-        - passive_component_distribution
-      stocks:
-        passive_component_distribution:
-          - '3702'
-          - '3036'
-      last_updated_reason: '2026-05-27: 股癌EP664明確點名通路商與MLCC/鋁電容/電感/電阻製造商同列漲停，現有規則庫僅涵蓋製造端漲價，未涵蓋通路商因持有現貨庫存在短缺期間同步增值的獨立獲利機制'
-      evidence_source: qualitative
-  - event: 光通休息資金輪動回ODM/EMS接棒
-    keywords:
-      - 資金輪動
-      - ODM
-      - EMS
-      - 光通休息
-      - 接棒
-    impact:
-      direction: bullish
-      description: 光通板塊進入整理期，主力資金轉移至ODM/EMS，推動此板塊估值修復
-      sectors:
-        - ODM
-        - EMS
-      stocks:
-        ODM:
-          - '2382'
-          - '3231'
-          - '2356'
-          - '2324'
-          - '4938'
-      last_updated_reason: '2026-06-04: 累積達標率 100%（5 筆），調整信心門檻 0.40 → 0.30'
-      evidence_source: quant
-    min_confidence: 0.3
-  - event: 美企業軟體AI獲利驗證帶動IGV強勢
-    keywords:
-      - IGV
-      - 軟體輪動
-      - AI貨幣化
-      - Salesforce
-      - ServiceNow
-      - Snowflake
-    impact:
-      direction: bullish
-      description: 美國企業軟體AI貨幣化進入驗證期，IGV領漲引發市場對台股軟體相關概念股補漲預期
-      sectors:
-        - enterprise_software
-        - AI_application
-      stocks: {}
-      last_updated_reason: '2026-05-31: EP666指出Salesforce大買回庫藏股、ServiceNow/Okta/Snowflake以AI增益交出超預期成績，IGV
-        ETF已全面突破，複製先前美股光通/資安帶動台股同類股補漲的模式，屬規則庫尚未涵蓋的新板塊輪動'
-      evidence_source: qualitative
-  - event: 台股融資急速膨脹觸發過熱警示
-    keywords:
-      - 融資暴增
-      - 處置股
-      - 槓桿疊加
-      - 過熱
-      - 強制平倉風險
-    impact:
-      direction: bearish
-      description: 融資槓桿快速堆疊，處置股流動性枯竭，一旦觸發修正將出現連鎖強制平倉賣壓
-      sectors:
-        - broad_market
-      stocks: {}
-      last_updated_reason: '2026-05-31: EP666明確提到融資增加速度超快、大量資金卡在處置股流動性受限、且有人已質押再買形成槓桿疊槓桿結構，為規則庫中尚無對應的系統性過熱警示事件，若修正觸發將產生連鎖強制平倉壓力'
-      evidence_source: qualitative
-  - event: Trump關稅退款上訴拉長法律不確定期
-    keywords:
-      - Trump關稅退款
-      - IEEPA上訴
-      - tariff refund appeal
-      - 關稅退款懸置
-      - 前置備貨
-    impact:
-      direction: bullish
-      description: 關稅退款訴訟懸置使美國進口商無法確定最終成本，維持提前下單備貨行為，台灣出口製造商受惠需求韌性
-      sectors:
-        - ODM/OEM
-        - 電子零組件
-      stocks:
-        ODM/OEM:
-          - '2317'
-          - '2382'
-          - '3231'
-      last_updated_reason: '2026-05-31: 多家媒體同日確認Trump政府將上訴法院「強制退還IEEPA關稅」裁定，退款懸置期拉長，進口商前置備貨動機持續，台灣ODM/OEM出貨需求受保護'
-      evidence_source: qualitative
-  - event: Tesla馬斯克估值敘事轉能源機器人FSD
-    keywords:
-      - 馬斯克敘事轉型
-      - Tesla機器人
-      - 能源儲存
-      - FSD自動駕駛
-      - 人形機器人供應鏈
-    impact:
-      direction: bullish
-      description: Tesla估值邏輯從EV銷量轉移至能源/機器人/FSD，帶動台灣機器人零組件與能源儲存供應鏈補漲
-      sectors:
-        - 工業機器人
-        - 能源儲存
-        - 自動駕駛
-      stocks:
-        工業機器人:
-          - '2049'
-        能源儲存:
-          - '2308'
-      last_updated_reason: '2026-05-31: 股癌EP665明確指出市場已不再以電動車出貨量評估Tesla/Musk概念，重心轉移至能源儲存、人形機器人、自動駕駛，台灣相關供應鏈獲新敘事支撐'
-      evidence_source: qualitative
-  - event: Trump對歐盟汽車關稅升至25%
-    keywords:
-      - EU汽車關稅
-      - 25%
-      - 歐盟
-      - Trump
-      - 車用供應鏈
-    impact:
-      direction: bearish
-      description: 歐系車廠成本驟升壓縮出貨量，可能削減零組件採購，台廠車用電子訂單面臨能見度下滑風險
-      sectors:
-        - 車用電子
-        - 汽車零組件
-      stocks: {}
-      last_updated_reason: '2026-06-03: CNBC確認Trump宣示對EU汽車加徵25%關稅，衝擊歐系車廠美國市場競爭力，可能加速在地化採購或削減產量，重塑車用電子供應鏈訂單走向，與現有規則中全球關稅框架不同，此為針對歐盟汽車業的定向政策衝擊'
-      evidence_source: qualitative
-  - event: 軌道衛星AI伺服器散熱太陽能板供應鏈卡位
-    keywords:
-      - SpaceX
-      - 軌道衛星
-      - AI伺服器
-      - 散熱片
-      - 太陽能板
-      - Neo Cloud
-      - 太空運算
-    impact:
-      direction: bullish
-      description: 軌道AI伺服器催生超規格散熱模組與太空級太陽能板需求，台灣散熱及相關零組件廠商具備卡位機會
-      sectors:
-        - 散熱
-        - 太空零組件
-        - 太陽能
-      stocks: {}
-      last_updated_reason: '2026-06-03: 股癌EP665明確指出SpaceX衛星AI伺服器散熱片規格超大、太陽能板需求龐大，且已在供應鏈見到蛛絲馬跡，Neo
-        Cloud估值邏輯浮現；此為超越原有SpaceX IPO概念框架的具體零組件供應鏈機會，聚焦散熱與能源模組端'
-      evidence_source: qualitative
-  - event: AI Token計費顛覆傳統SaaS競爭格局
-    keywords:
-      - Token計費
-      - SaaS洗牌
-      - OpenAI
-      - Anthropic
-      - IGV
-      - 資料護城河
-      - 軟體輪動
-    impact:
-      direction: bullish
-      description: 
-        Token計費模式擠壓傳統軟體訂閱收入，資料護城河成新估值核心，推升AI原生軟體及後端雲端基礎建設需求，資金持續流入IGV相關概念
-      sectors:
-        - 雲端基礎建設
-        - AI軟體
-      stocks: {}
-      last_updated_reason: '2026-06-03: 股癌EP666指出OpenAI/Anthropic以Token base計費切入企業市場，傳統SaaS業者商業模式面臨結構性重塑，掌握專屬資料者取得護城河；與現有規則「美企業軟體AI獲利驗證帶動IGV強勢」不同，此為產業洗牌機制（誰輸誰贏），而非單純獲利驗證；IGV已突破確認資金輪動進場'
-      evidence_source: qualitative
-  - event: 被動元件電感電阻缺口擴散全品類
-    keywords:
-      - 電感
-      - 電阻
-      - 缺貨
-      - 被動元件
-      - 短缺擴散
-      - 乾坤
-      - 奇力新
-    impact:
-      direction: bullish
-      description: 電感電阻納入缺貨清單，台系電感電阻廠接單能見度拉長、漲價預期形成，帶動股價重估
-      sectors:
-        - passive_components
-        - inductors
-        - resistors
-      stocks:
-        inductors:
-          - '2456'
-          - '2452'
-        resistors:
-          - '2437'
-      last_updated_reason: '2026-06-03: EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列，被動元件短缺範疇從電容類擴至電感電阻，供應鏈衝擊面加寬，且江海電容備忘錄指出全球缺口約20%+'
-      evidence_source: qualitative
-  - event: 被動元件2018超級循環毛利率重估升評
-    keywords:
-      - 2018超級循環
-      - 毛利率重估
-      - 國巨
-      - B/B ratio
-      - EPS上修
-      - 目標價
-    impact:
-      direction: bullish
-      description: 2018超級循環毛利率作為估值天花板參考，帶動被動元件廠EPS目標大幅上修，誘發機構買盤
-      sectors:
-        - passive_components
-      stocks:
-        passive_components:
-          - '2327'
-          - '2492'
-          - '3026'
-      last_updated_reason: '2026-06-03: EP665以2018年國巨毛利率6X%為類比上限，搭配B/B ratio上拉（特規品稼動90%、標準品80%），市場開始以2018超級循環框架重新試算EPS與目標價，觸發分析師調升評等與資金進場'
-      evidence_source: qualitative
-  - event: AI PC地端推論商業化帶動筆電OEM題材重估
-    keywords:
-      - AI PC
-      - 地端推論
-      - DGX Spark
-      - N1X
-      - Computex
-      - 開源模型
-      - Token費用
-      - 筆電OEM
-      - Rerate
-    impact:
-      direction: bullish
-      description: 地端AI推論降低雲端Token依賴，推動高規AI PC換機潮，帶動筆電ODM高單價機種出貨量與毛利率向上重評
-      sectors:
-        - laptop_ODM
-        - AI_PC_chip
-      stocks:
-        laptop_ODM:
-          - '2382'
-          - '2324'
-          - '3231'
-        AI_PC_chip:
-          - '2454'
-      last_updated_reason: '2026-06-04: Computex 2026 DGX Spark（N1X）亮相，輝達與聯發科雙雙押注AI
-        PC；股癌EP667指出開源模型持續成熟後可滿足企業地端推論需求、大幅降低雲端Token費用，形成AI PC第二波需求的基本面支撐，且高單價AI PC若出貨強勁可帶動筆電OEM毛利率Rerate，與現有AI伺服器需求爆發規則邏輯不同'
-      evidence_source: qualitative
+- event: "美國東南亞貿易協商停滯"
+  keywords:
+  - "Southeast Asia"
+  - "trade deal"
+  - "Vietnam"
+  - "東南亞"
+  - "供應鏈轉移"
+  - "關稅豁免"
+  - "越南"
+  horizon: event
+  impact:
+    direction: "bearish"
+    description: "台廠赴東南亞設廠以規避關稅的策略效益下降，供應鏈重組進程受阻。"
+    sectors: ["EMS", "PCB"]
+    stocks:
+      EMS:
+      - "2317"     # 鴻海
+      PCB:
+      - "3034"     # 聯詳
+- event: 美東南亞貿易協議僵局
+  keywords:
+  - Southeast Asia
+  - trade deal
+  - Vietnam
+  - 東南亞
+  - 供應鏈轉移
+  - 關稅豁免
+  horizon: event
+  impact:
+    direction: bearish
+    description: 轉移東南亞產能的台廠若無法獲關稅豁免，供應鏈轉移成本無法抵銷關稅壓力
+    sectors:
+    - electronics_manufacturing
+    - supply_chain
+    stocks:
+      electronics_manufacturing:
+      - '2317'
+    last_updated_reason: '2026-05-07: Foreign Policy報導美國與東南亞貿易談判陷入僵局，影響已遷廠越南、泰國的台灣供應鏈廠商藉東南亞規避關稅的策略效益'
+    evidence_source: qualitative
+- event: AI 伺服器需求爆發帶動台積電先進封裝
+  keywords:
+  - CoWoS
+  - AI server
+  - advanced packaging
+  - Blackwell
+  - 先進封裝
+  - AI伺服器
+  - 台積電
+  horizon: trend
+  impact:
+    direction: bullish
+    description: AI GPU 需求帶動 CoWoS 先進封裝，台積電獨家供應，聯發科 AI 晶片設計受益
+    sectors:
+    - foundry
+    - ic_design
+    - packaging
+    stocks:
+      foundry:
+      - '2330'
+      ic_design:
+      - '2454'
+      packaging:
+      - '3711'
+    last_updated_reason: '2026-05-14: AI 伺服器需求帶動 CoWoS 先進封裝，台積電獨家產能造成轉單效益，Morgan Stanley 上調目標價'
+    evidence_source: qualitative
+- event: 歐美貿易關稅衝突升級
+  keywords:
+  - EU tariffs
+  - EU-US trade deal
+  - Trump trade
+  - 歐盟關稅
+  - 貿易報復
+  horizon: event
+  impact:
+    direction: bearish
+    description: 歐盟若對美實施報復關稅，將壓縮台灣供應鏈在歐美市場的雙邊出口空間，並可能引發歐系客戶縮減採購
+    sectors:
+    - electronics_export
+    - machinery
+    stocks: {}
+    last_updated_reason: '2026-05-14: 多篇報導（EUobserver、politico.eu、歐洲議會）同步指出歐盟與Trump關稅談判瀕臨破裂，EU-US相互報復關稅風險升高，與現有規則中的東南亞僵局屬不同地緣軸線，對台灣出口歐洲的電子與機械廠商形成獨立風險敞口'
+    evidence_source: qualitative
+- event: 美法院裁定Trump全球關稅違法
+  keywords:
+  - trade court
+  - 10% global tariff illegal
+  - Section 122
+  - IEEPA
+  - 關稅違法
+  - 裁定撤銷
+  horizon: event
+  impact:
+    direction: bullish
+    description: 關稅違法裁定若上訴維持，台灣電子/半導體出口商成本壓力解除，訂單能見度回升
+    sectors:
+    - semiconductors
+    - electronics
+    - servers
+    stocks:
+      semiconductors:
+      - '2330'
+      electronics:
+      - '2317'
+      - '2382'
+    last_updated_reason: '2026-05-14: 美國貿易法院（及聯邦法院）多次裁定Trump依IEEPA/Section 122實施的10%全球關稅違法，若裁定確立將導致關稅被取消，直接降低台灣出口商成本壓力，為現有『Trump全球關稅政策衝擊出口』的反向事件，影響方向截然不同，必須獨立追蹤'
+    evidence_source: qualitative
+- event: 美法院封鎖Trump關稅令
+  keywords:
+  - court blocks tariff
+  - 10% tariff struck down
+  - trade superpower
+  - judges
+  horizon: event
+  impact:
+    direction: bullish
+    description: 關稅若被法院封鎖，台灣對美出口壓力解除，電子/科技出口股受惠
+    sectors:
+    - electronics
+    - semiconductors
+    stocks:
+      electronics:
+      - '2317'
+      - '2382'
+      semiconductors:
+      - '2330'
+    last_updated_reason: '2026-05-14: 多家主流媒體（CNN、Al Jazeera、Financial Post）證實美國法院已裁定阻擋/暫停 Trump 10% 全球關稅，動搖關稅政策執行力，屬全新法律風險事件，現有規則僅涵蓋關稅政策本身衝擊而未涵蓋司法逆轉情境'
+    evidence_source: qualitative
+- event: 美中貿易停火脆弱化
+  keywords:
+  - fragile truce
+  - Trump China visit
+  - US-China trade
+  - bilateral
+  horizon: event
+  impact:
+    direction: bearish
+    description: 美中貿易停火若破裂，兩岸供應鏈受波及，重度依賴中美兩端的台廠首當其衝
+    sectors:
+    - electronics
+    - supply_chain
+    stocks:
+      electronics:
+      - '2317'
+    last_updated_reason: '2026-05-14: BBC 報導 Trump 訪中將測試脆弱停火，與「美國對中半導體禁令」不同，聚焦整體雙邊貿易關係是否崩潰，為台灣供應鏈帶來系統性不確定性'
+    evidence_source: qualitative
+- event: 美國法院裁定阻擋Trump關稅權
+  keywords:
+  - court ruling
+  - tariff blocked
+  - judicial review
+  - IEEPA
+  - 關稅違憲
+  horizon: event
+  impact:
+    direction: bullish
+    description: 法院阻止關稅執行，降低台灣出口商成本壓力，帶動電子製造族群估值修復
+    sectors:
+    - semiconductors
+    - electronics_manufacturing
+    - supply_chain
+    stocks:
+      semiconductors:
+      - '2330'
+      - '2454'
+      electronics_manufacturing:
+      - '2317'
+      - '2382'
+    last_updated_reason: '2026-05-14: 多家聯邦法院接連裁定Trump 10%全球關稅違憲或違法，若判決確立將大幅削減出口關稅壓力，對台灣電子/半導體出口商構成直接利多，與現有規則「衝擊出口」方向相反，屬新型反轉事件'
+    evidence_source: qualitative
+- event: 美中貿易脆弱休戰談判
+  keywords:
+  - US-China truce
+  - fragile truce
+  - Trump China visit
+  - 美中談判
+  - 貿易休戰
+  horizon: event
+  impact:
+    direction: bullish
+    description: 美中緊張緩和使台廠供應鏈備料週期拉長，短期拉貨效應帶動半導體與組裝廠
+    sectors:
+    - semiconductors
+    - electronics_manufacturing
+    stocks:
+      semiconductors:
+      - '2330'
+      - '2303'
+      electronics_manufacturing:
+      - '2317'
+    last_updated_reason: '2026-06-04: 累積達標率 83%（6 筆），調整信心門檻 0.40 → 0.30'
+    evidence_source: quant
+  min_confidence: 0.3
+- event: Vera Rubin換代觸發被動元件超缺
+  keywords:
+  - Vera Rubin
+  - MLCC
+  - 被動元件缺貨
+  - 鋁電容漲價
+  - 排擠效應
+  - 包產能
+  horizon: trend
+  impact:
+    direction: bullish
+    description: AI GPU換代帶動被動元件用量倍增，供給瓶頸推動漲價，台系廠商跟漲受益
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+      - '2472'
+    last_updated_reason: '2026-05-14: NVIDIA Vera Rubin世代換代用量「超級無敵多」，Power廠已出現包產能行為，MLCC 47UF交期拉長、鋁電容Nippon Chemi-Con啟動漲價，供需失衡提前於預期（2026H2→當前）發生，且陶瓷/鉭/鋁電容、電感均同步噴出，漲價連鎖效應具體可追蹤'
+    evidence_source: qualitative
+- event: 美法院暫停關稅封鎖令（關稅重新生效）
+  keywords:
+  - 美法院暫停封鎖
+  - 10%全球關稅
+  - 關稅重新生效
+  - 上訴法院
+  horizon: event
+  impact:
+    direction: bearish
+    description: 關稅封鎖令被高院暫停，出口型台廠關稅成本壓力再度回籠，買方觀望情緒升溫
+    sectors:
+    - export_manufacturing
+    - electronics
+    stocks: {}
+    last_updated_reason: '2026-05-14: 05/13 Al Jazeera報導美國上訴法院暫停了下級法院封鎖Trump 10%全球關稅的裁定，與已有規則「美法院封鎖Trump關稅令」方向相反，關稅再度恢復效力，對台灣出口導向產業形成新一輪壓力'
+    evidence_source: qualitative
+- event: 功率半導體需求驅動漲價潮
+  keywords:
+  - 功率半導體漲價
+  - 德州儀器
+  - 羅姆
+  - 成熟製程
+  - 需求驅動
+  - 包產能
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 需求驅動漲價推動成熟製程晶圓廠稼動率與ASP雙升，台系代工廠受益
+    sectors:
+    - mature_node_foundry
+    - power_semiconductor
+    stocks:
+      mature_node_foundry:
+      - '5347'
+    last_updated_reason: '2026-05-14: 德州儀器（TI）與羅姆（Rohm）同步啟動漲價，且明確為需求驅動而非成本驅動；世界先進新廠產能已全數賣出並獲台積電技術授權，海外客戶搶先報漲包產能被拒，顯示廠方對後市有強烈預期'
+    evidence_source: qualitative
+- event: 鋁電容日系大廠退出供應缺口漲價
+  keywords:
+  - 鋁電容
+  - OS-CON
+  - Panasonic退出
+  - Nippon Chemi-Con
+  - 漲價
+  - 立隆電
+  - 鈺邦
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 日系產能退出造成結構性缺口，台系鋁電容廠受惠漲價與轉單
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2472'
+      - '6690'
+    last_updated_reason: '2026-05-14: Panasonic停止OS-CON固態電容生產，Nippon Chemi-Con承接但產能不足已發起漲價，屬供給側結構性收縮，不同於Vera Rubin需求面驅動的MLCC短缺'
+    evidence_source: qualitative
+- event: 消費IC恐慌補庫存推升成熟製程稼動
+  keywords:
+  - 補庫存
+  - DDIC
+  - 成熟製程
+  - 世界先進
+  - 稼動率
+  - 漲價包產能
+  horizon: event
+  impact:
+    direction: bullish
+    description: 恐慌性補庫存拉升成熟製程晶圓廠稼動率與ASP，短期帶動獲利
+    sectors:
+    - foundry
+    - ic_design
+    stocks:
+      foundry:
+      - '5347'
+    last_updated_reason: '2026-05-14: 晶圓代工漲價預期引發下游DDIC/筆電廠商恐慌性提前拉貨，非終端需求復甦，世界先進新廠產能已全數被包，屬需求驅動漲價性質'
+    evidence_source: qualitative
+- event: 被動元件全品類漲價聯動擴散
+  keywords:
+  - 鉭電容
+  - 電感
+  - 電阻
+  - 標準品漲價
+  - 全品類
+  - Vishay
+  - VPG
+  - Nichicon
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 漲價由高階MLCC向下擴散至標準品與電感電阻，低基期標準品需求彈性低，量價齊揚空間大
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+      - '2472'
+    last_updated_reason: '2026-06-04: 累積達標率 89%（9 筆），調整信心門檻 0.40 → 0.30'
+    evidence_source: quant
+  min_confidence: 0.3
+- event: 成熟製程新廠滿載海外客包產漲價
+  keywords:
+  - 世界先進
+  - 成熟製程
+  - 包產能
+  - 台積電技轉
+  - 漲價
+  - 新廠
+  - 需求驅動
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 海外客戶願溢價鎖產能被拒，代表世界先進對行情預期強烈，成熟製程報價進入需求驅動漲價循環
+    sectors:
+    - foundry
+    stocks:
+      foundry:
+      - '5347'
+    last_updated_reason: '2026-05-14: EP660提到世界先進新建廠房產能已全數售罄並取得台積電技轉，且有海外客戶主動開高價求包產能卻遭拒簽約，顯示賣方議價力極強；現有規則僅涵蓋「消費IC恐慌補庫存推升稼動」，未覆蓋新廠需求驅動型漲價議題'
+    evidence_source: qualitative
+- event: 矽晶圓業者全球同步轉強
+  keywords:
+  - 矽晶圓
+  - 環球晶
+  - 晶圓轉強
+  - 半導體週期
+  - 上游復甦
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 上游矽晶圓滿載反映晶圓代工排程拉長，帶動台灣矽晶圓廠訂單能見度與 ASP 同步回升
+    sectors:
+    - silicon_wafer
+    stocks:
+      silicon_wafer:
+      - '6488'
+      - '6182'
+      - '3016'
+    last_updated_reason: '2026-05-14: EP660 明確指出全球矽晶圓業者股價同步轉強，是半導體週期上行由下游（被動元件、先進封裝）擴散至上游的先行訊號；現有規則庫尚無上游矽晶圓維度的追蹤規則，可補充判斷半導體復甦的廣度與深度'
+    evidence_source: qualitative
+- event: 美股光通強勢帶動台股光通補漲
+  keywords:
+  - 光通訊
+  - 美股光通
+  - 落後補漲
+  - 抄答案
+  - 光纖
+  horizon: event
+  impact:
+    direction: bullish
+    description: 美股光通族群持續領漲後，台灣光通族群依循記憶體/被動元件相同模式落後補漲
+    sectors:
+    - optical_communication
+    stocks:
+      optical_communication: []
+    last_updated_reason: '2026-05-14: EP661明確點出台股光通類似先前記憶體、被動元件的落後補漲節奏：美股光通持續強則台股光通將跟進，已有可操作的國際帶動台股框架'
+    evidence_source: qualitative
+- event: 高通AI基礎建設需求爆發帶動供應鏈
+  keywords:
+  - 高通
+  - Qualcomm
+  - AI建設
+  - AI基礎建設
+  - 晶圓代工
+  - 非AI PC
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 高通AI基建需求驅動晶圓代工及IC設計供應鏈受惠，AI終端需求擴散超出伺服器單一場域
+    sectors:
+    - ic_design
+    - foundry
+    stocks:
+      foundry:
+      - '2330'
+    last_updated_reason: '2026-05-14: EP661指出高通近期大漲來自AI基礎建設需求（非AI PC），代表AI支出擴散至NVIDIA以外晶片族群，影響晶圓代工稼動與相關台廠'
+    evidence_source: qualitative
+- event: 投信增持台積電觸發中小型股籌碼流出
+  keywords:
+  - 投信
+  - 公發書
+  - 台積電增持
+  - 籌碼重配
+  - 中小型股賣壓
+  - 汰弱留強
+  horizon: event
+  impact:
+    direction: mixed
+    description: 台積電因投信增持而獲法人買盤支撐，中小型高投信持股標的面臨停利賣壓與資金排擠。
+    sectors:
+    - semiconductor
+    - small_mid_cap
+    stocks:
+      semiconductor:
+      - '2330'
+    last_updated_reason: '2026-05-17: 股癌EP661/EP662 兩集均明確指出：投信需改公發書（2~5個月）才能增持台積電，市場資金有限，勢必從投信高持股中小型股提款，形成台積電吸金、中小股失血的雙向籌碼重配結構事件，屬台灣市場獨有微結構風險。'
+    evidence_source: qualitative
+- event: 美股資安股全面創高帶動台股資安補漲
+  keywords:
+  - 資安
+  - CrowdStrike
+  - 創新高
+  - 族群性
+  - 軟體股
+  - 補漲
+  horizon: event
+  impact:
+    direction: bullish
+    description: 美股資安股領漲形成族群訊號，台股資安相關標的跟漲滯後補漲空間大。
+    sectors:
+    - cybersecurity
+    stocks: {}
+    last_updated_reason: '2026-05-17: 股癌EP662 明確點名 CrowdStrike 等美股資安股一大堆都在創新高，族群性已形成，與過去「美股光通帶動台股光通補漲」為同一跨市連動模式，資安族群在台股尚未充分反映。'
+    evidence_source: qualitative
+- event: Google TPU 聯發科深度介入ASIC設計
+  keywords:
+  - Google TPU
+  - 聯發科
+  - Zebrafish
+  - Humu Fish
+  - ASIC
+  - 自研AI晶片
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: 聯發科承接Google TPU客製ASIC設計訂單，開闢Nvidia供應鏈以外的AI晶片營收來源，帶動相關IC設計與先進封裝需求
+    sectors:
+    - IC設計
+    - AI晶片
+    stocks:
+      IC設計:
+      - '2454'
+    last_updated_reason: '2026-05-22: EP663明確點名Google TPU V8由聯發科Zebrafish對應博通Sunfish、V9由聯發科Humu Fish承接，聯發科正以主力ASIC設計夥伴身份切入Google自研AI晶片供應鏈，此需求驅動與現有Nvidia生態系規則不同，屬全新事件主線'
+    evidence_source: qualitative
+- event: Google TPU聯發科搶入AI客製晶片設計
+  keywords:
+  - Google TPU
+  - 聯發科
+  - Zebrafish
+  - Humu Fish
+  - 博通
+  - Sunfish
+  - 客製AI晶片
+  - 雲端TPU
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: 聯發科打入Google TPU設計競爭格局，打破博通獨佔，帶動市場上修聯發科AI營收預期
+    sectors:
+    - IC_design
+    stocks:
+      IC_design:
+      - '2454'
+    last_updated_reason: '2026-05-22: 股癌EP663具體點名聯發科以Zebrafish對應Google TPU V8、Humu Fish對應V9，直接與博通Sunfish競爭同一設計標案；若聯發科拿下份額，代表台廠切入超大雲端AI客製晶片供應鏈，現有規則庫中無此題材'
+    evidence_source: qualitative
+- event: 日系大廠漲價函引爆被動元件現貨搶購
+  keywords:
+  - Panasonic漲價函
+  - 現貨掃貨
+  - 採購恐慌
+  - 電容囤積
+  - 貼牌廠商
+  horizon: event
+  impact:
+    direction: bullish
+    description: 大廠正式漲價函引爆下游恐慌補庫存與現貨囤積，強化被動元件多波段漲價循環
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+      - '3026'
+    last_updated_reason: '2026-05-23: Panasonic已對部分客戶發出正式漲價通知，直接引發採購部門緊急赴現貨市場掃貨；台灣貼牌廠商（本即向日本採購電容回台出貨）亦趁機囤積。此為需求端恐慌性搶購新觸發機制，與現有規則側重供給端斷鏈或產能退出不同，將加速供需失衡惡化並強化漲價幅度與持續性'
+    evidence_source: qualitative
+- event: 歐美關稅談判轉向妥協緩和
+  keywords:
+  - EU妥協
+  - 關稅談判
+  - 歐美貿易協議
+  - 貿易衝突緩和
+  horizon: event
+  impact:
+    direction: bullish
+    description: 歐美關稅緊張關係緩和可改善全球貿易預期，減輕台灣科技出口廠商的訂單與匯率不確定性壓力
+    sectors:
+    - electronics_export
+    - tech_manufacturing
+    stocks: {}
+    last_updated_reason: '2026-05-23: EU於05/20主動提出妥協方案以阻止Trump進一步升高關稅，方向性與現有規則庫「歐美貿易關稅衝突升級」相反；若歐美達成貿易協議，將降低全球供應鏈不確定性，對台灣出口導向科技製造業具情緒面正向效益'
+    evidence_source: qualitative
+- event: Anthropic首度轉獲利強化AI硬體投資循環
+  keywords:
+  - Anthropic
+  - 獲利
+  - AI泡沫
+  - 算力
+  - 硬體投資
+  horizon: trend
+  impact:
+    direction: bullish
+    description: AI基礎建設回報可見度提升，刺激雲端業者持續擴大GPU/CoWoS/HBM採購，台灣AI供應鏈受惠
+    sectors:
+    - AI伺服器
+    - 先進封裝
+    - HBM記憶體模組
+    stocks:
+      AI伺服器:
+      - '2330'
+      先進封裝:
+      - '3711'
+    last_updated_reason: '2026-05-24: 最燒錢AI公司轉獲利，打臉AI泡沫論並驗證硬體設備可回本，預期帶動業者加大算力採購，延長AI硬體需求週期'
+    evidence_source: qualitative
+- event: AI算力包產能潮擴散至OSAT封測
+  keywords:
+  - OSAT
+  - 封測
+  - 包產能
+  - 供需失衡
+  - AI伺服器
+  horizon: trend
+  impact:
+    direction: bullish
+    description: AI客戶搶佔封測產能形成供需失衡，推升OSAT報價與稼動率，帶動封測股估值重評
+    sectors:
+    - 封裝測試
+    stocks:
+      封裝測試:
+      - '3711'
+      - '6239'
+      - '2328'
+    last_updated_reason: '2026-05-24: 節目明確點名包產能浪潮將從記憶體、晶圓代工、光通擴散至OSAT封測，封測廠成下一個供需瓶頸與漲價候選'
+    evidence_source: qualitative
+- event: Google-Blackstone TPU雲端解鎖第三方算力市場
+  keywords:
+  - Google TPU
+  - Blackstone
+  - 第三方雲端
+  - 算力市場
+  - 隱私
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: 中立第三方TPU雲端降低企業採用門檻，驅動TPU產能需求倍增，台積電及TPU供應鏈（聯發科、CoWoS）受惠
+    sectors:
+    - ASIC設計
+    - 晶圓代工
+    - AI基礎建設
+    stocks:
+      ASIC設計:
+      - '2454'
+      晶圓代工:
+      - '2330'
+    last_updated_reason: '2026-05-24: Google聯手Blackstone建立第三方TPU雲端，解決企業資料隱私顧慮，大幅擴大TPU可服務客群，外銷比例目標達三分之一，直接拉升TPU產能需求'
+    evidence_source: qualitative
+- event: xAI Colossus算力出租確立AI硬體租賃回本模式
+  keywords:
+  - xAI
+  - Colossus
+  - 算力出租
+  - AI硬體租賃
+  - 投資回本
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: AI硬體投資下行風險被租賃模式托底，採購方對伺服器/基礎建設投資意願提升，利好台灣AI伺服器組裝與CoWoS先進封裝供應鏈
+    sectors:
+    - ai_server
+    - advanced_packaging
+    stocks:
+      ai_server:
+      - '2317'
+      - '2382'
+      - '6669'
+      advanced_packaging:
+      - '2330'
+    last_updated_reason: '2026-05-25: EP664明確指出馬斯克Grok發展不如預期後轉租Colossus算力，鉅額投資可在1-2年內回本，確立「AI模型失敗仍可靠硬體租賃變現」新商業模式。此事件與已有規則「Anthropic首度轉獲利」機制不同：Anthropic驗證AI模型盈利，本事件驗證硬體資產本身的租賃安全邊際，為AI硬體投資提供下行保護，進一步強化買硬體意願'
+    evidence_source: qualitative
+- event: AI伺服器電源模組推升高壓MLCC瓶頸缺口
+  keywords:
+  - 高壓MLCC
+  - 47μF
+  - 22μF
+  - AI伺服器電源
+  - 村田
+  - Semco
+  - 電源模組
+  horizon: trend
+  impact:
+    direction: bullish
+    description: AI 伺服器電源供應模組對高壓 MLCC 的長期結構性需求，推升 47μF/22μF 現貨持續短缺並帶動台系被動元件廠受惠
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+      - '6173'
+    last_updated_reason: '2026-05-25: EP664 明確指出 AI 伺服器電源櫃對高壓 MLCC 用量結構性增大，47μF 缺到爆炸且僅由村田與 Semco 供應、22μF 同步告缺，形成有別於 Vera Rubin 換代的獨立需求驅動鏈（電源管理基礎設施，非 GPU 晶片本身）'
+    evidence_source: qualitative
+- event: 被動元件廠商棄低階轉高階重塑供給結構
+  keywords:
+  - 被動元件轉型
+  - 高階產品
+  - 低階退出
+  - 供給結構
+  - 稼動率
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 廠商主動退出低階品種、集中高階，壓縮低階供給天花板，使低階品現貨溢價持續而非短暫
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+    last_updated_reason: '2026-05-25: EP663 指出高階產能吃飽後廠商可拒接低階訂單轉做高階，這是供給面結構性改變（非短期缺料），將長期壓縮低階被動元件可用產能，形成慢性缺貨溢價'
+    evidence_source: qualitative
+- event: SpaceX IPO引爆衛星軌道AI伺服器概念
+  keywords:
+  - SpaceX
+  - IPO
+  - Neo Cloud
+  - 衛星AI伺服器
+  - 軌道算力
+  - 散熱片
+  - 太陽能板
+  - 太空運算
+  horizon: event
+  impact:
+    direction: bullish
+    description: SpaceX IPO卡位太空運算第一棒，帶動軌道衛星AI伺服器供應鏈（散熱、太陽能板）進入本夢比估值重塑期
+    sectors:
+    - 散熱模組
+    - 太空組件
+    - 衛星概念
+    stocks:
+      散熱模組:
+      - '3324'
+      - '3017'
+    last_updated_reason: '2026-05-27: EP665明確指出SpaceX高機率成為新Neo Cloud概念股，供應鏈已見蛛絲馬跡；衛星搭載AI伺服器具無限能源優勢，散熱片與太陽能板需求巨大，形成有別於地面資料中心的全新算力投資主題，現有規則庫未涵蓋此太空軌道算力脈絡'
+    evidence_source: qualitative
+- event: 鉭電容爭議金屬退場加速MLCC結構替代
+  keywords:
+  - 鉭電容
+  - 爭議金屬
+  - 衝突礦物
+  - MLCC替代
+  - 鋁電容
+  - 驗證期壓縮
+  - B/B ratio
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 鉭電容被迫退出市場的替代訂單湧入MLCC與鋁電容廠，在稼動率已達80-90%時進一步推升供需缺口與毛利率
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+    last_updated_reason: '2026-05-27: 鉭為衝突礦物(conflict mineral)，EP665明確指出危機環境下客戶以資本力量壓縮驗證期快速轉向MLCC與鋁電容；此為結構性替代需求而非週期性補庫存，可延長漲價循環且現有被動元件漲價規則未捕捉此驅動機制'
+    evidence_source: qualitative
+- event: 被動元件通路商庫存升值帶動漲停潮
+  keywords:
+  - 通路商
+  - 被動元件
+  - 漲停
+  - 庫存升值
+  - 現貨缺貨
+  - 大聯大
+  - 文曄
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 被動元件現貨短缺時，通路商現貨庫存跟隨漲價，庫存評價與毛利雙升，形成有別於製造端的第二波漲價受益
+    sectors:
+    - passive_component_distribution
+    stocks:
+      passive_component_distribution:
+      - '3702'
+      - '3036'
+    last_updated_reason: '2026-05-27: 股癌EP664明確點名通路商與MLCC/鋁電容/電感/電阻製造商同列漲停，現有規則庫僅涵蓋製造端漲價，未涵蓋通路商因持有現貨庫存在短缺期間同步增值的獨立獲利機制'
+    evidence_source: qualitative
+- event: 光通休息資金輪動回ODM/EMS接棒
+  keywords:
+  - 資金輪動
+  - ODM
+  - EMS
+  - 光通休息
+  - 接棒
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 光通板塊進入整理期，主力資金轉移至ODM/EMS，推動此板塊估值修復
+    sectors:
+    - ODM
+    - EMS
+    stocks:
+      ODM:
+      - '2382'
+      - '3231'
+      - '2356'
+      - '2324'
+      - '4938'
+    last_updated_reason: '2026-06-04: 累積達標率 100%（5 筆），調整信心門檻 0.40 → 0.30'
+    evidence_source: quant
+  min_confidence: 0.3
+- event: 美企業軟體AI獲利驗證帶動IGV強勢
+  keywords:
+  - IGV
+  - 軟體輪動
+  - AI貨幣化
+  - Salesforce
+  - ServiceNow
+  - Snowflake
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 美國企業軟體AI貨幣化進入驗證期，IGV領漲引發市場對台股軟體相關概念股補漲預期
+    sectors:
+    - enterprise_software
+    - AI_application
+    stocks: {}
+    last_updated_reason: '2026-05-31: EP666指出Salesforce大買回庫藏股、ServiceNow/Okta/Snowflake以AI增益交出超預期成績，IGV ETF已全面突破，複製先前美股光通/資安帶動台股同類股補漲的模式，屬規則庫尚未涵蓋的新板塊輪動'
+    evidence_source: qualitative
+- event: 台股融資急速膨脹觸發過熱警示
+  keywords:
+  - 融資暴增
+  - 處置股
+  - 槓桿疊加
+  - 過熱
+  - 強制平倉風險
+  horizon: cycle
+  impact:
+    direction: bearish
+    description: 融資槓桿快速堆疊，處置股流動性枯竭，一旦觸發修正將出現連鎖強制平倉賣壓
+    sectors:
+    - broad_market
+    stocks: {}
+    last_updated_reason: '2026-05-31: EP666明確提到融資增加速度超快、大量資金卡在處置股流動性受限、且有人已質押再買形成槓桿疊槓桿結構，為規則庫中尚無對應的系統性過熱警示事件，若修正觸發將產生連鎖強制平倉壓力'
+    evidence_source: qualitative
+- event: Trump關稅退款上訴拉長法律不確定期
+  keywords:
+  - Trump關稅退款
+  - IEEPA上訴
+  - tariff refund appeal
+  - 關稅退款懸置
+  - 前置備貨
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 關稅退款訴訟懸置使美國進口商無法確定最終成本，維持提前下單備貨行為，台灣出口製造商受惠需求韌性
+    sectors:
+    - ODM/OEM
+    - 電子零組件
+    stocks:
+      ODM/OEM:
+      - '2317'
+      - '2382'
+      - '3231'
+    last_updated_reason: '2026-05-31: 多家媒體同日確認Trump政府將上訴法院「強制退還IEEPA關稅」裁定，退款懸置期拉長，進口商前置備貨動機持續，台灣ODM/OEM出貨需求受保護'
+    evidence_source: qualitative
+- event: Tesla馬斯克估值敘事轉能源機器人FSD
+  keywords:
+  - 馬斯克敘事轉型
+  - Tesla機器人
+  - 能源儲存
+  - FSD自動駕駛
+  - 人形機器人供應鏈
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: Tesla估值邏輯從EV銷量轉移至能源/機器人/FSD，帶動台灣機器人零組件與能源儲存供應鏈補漲
+    sectors:
+    - 工業機器人
+    - 能源儲存
+    - 自動駕駛
+    stocks:
+      工業機器人:
+      - '2049'
+      能源儲存:
+      - '2308'
+    last_updated_reason: '2026-05-31: 股癌EP665明確指出市場已不再以電動車出貨量評估Tesla/Musk概念，重心轉移至能源儲存、人形機器人、自動駕駛，台灣相關供應鏈獲新敘事支撐'
+    evidence_source: qualitative
+- event: Trump對歐盟汽車關稅升至25%
+  keywords:
+  - EU汽車關稅
+  - 25%
+  - 歐盟
+  - Trump
+  - 車用供應鏈
+  horizon: event
+  impact:
+    direction: bearish
+    description: 歐系車廠成本驟升壓縮出貨量，可能削減零組件採購，台廠車用電子訂單面臨能見度下滑風險
+    sectors:
+    - 車用電子
+    - 汽車零組件
+    stocks: {}
+    last_updated_reason: '2026-06-03: CNBC確認Trump宣示對EU汽車加徵25%關稅，衝擊歐系車廠美國市場競爭力，可能加速在地化採購或削減產量，重塑車用電子供應鏈訂單走向，與現有規則中全球關稅框架不同，此為針對歐盟汽車業的定向政策衝擊'
+    evidence_source: qualitative
+- event: 軌道衛星AI伺服器散熱太陽能板供應鏈卡位
+  keywords:
+  - SpaceX
+  - 軌道衛星
+  - AI伺服器
+  - 散熱片
+  - 太陽能板
+  - Neo Cloud
+  - 太空運算
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 軌道AI伺服器催生超規格散熱模組與太空級太陽能板需求，台灣散熱及相關零組件廠商具備卡位機會
+    sectors:
+    - 散熱
+    - 太空零組件
+    - 太陽能
+    stocks: {}
+    last_updated_reason: '2026-06-03: 股癌EP665明確指出SpaceX衛星AI伺服器散熱片規格超大、太陽能板需求龐大，且已在供應鏈見到蛛絲馬跡，Neo Cloud估值邏輯浮現；此為超越原有SpaceX IPO概念框架的具體零組件供應鏈機會，聚焦散熱與能源模組端'
+    evidence_source: qualitative
+- event: AI Token計費顛覆傳統SaaS競爭格局
+  keywords:
+  - Token計費
+  - SaaS洗牌
+  - OpenAI
+  - Anthropic
+  - IGV
+  - 資料護城河
+  - 軟體輪動
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: Token計費模式擠壓傳統軟體訂閱收入，資料護城河成新估值核心，推升AI原生軟體及後端雲端基礎建設需求，資金持續流入IGV相關概念
+    sectors:
+    - 雲端基礎建設
+    - AI軟體
+    stocks: {}
+    last_updated_reason: '2026-06-03: 股癌EP666指出OpenAI/Anthropic以Token base計費切入企業市場，傳統SaaS業者商業模式面臨結構性重塑，掌握專屬資料者取得護城河；與現有規則「美企業軟體AI獲利驗證帶動IGV強勢」不同，此為產業洗牌機制（誰輸誰贏），而非單純獲利驗證；IGV已突破確認資金輪動進場'
+    evidence_source: qualitative
+- event: 被動元件電感電阻缺口擴散全品類
+  keywords:
+  - 電感
+  - 電阻
+  - 缺貨
+  - 被動元件
+  - 短缺擴散
+  - 乾坤
+  - 奇力新
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 電感電阻納入缺貨清單，台系電感電阻廠接單能見度拉長、漲價預期形成，帶動股價重估
+    sectors:
+    - passive_components
+    - inductors
+    - resistors
+    stocks:
+      inductors:
+      - '2456'
+      - '2452'
+      resistors:
+      - '2437'
+    last_updated_reason: '2026-06-03: EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列，被動元件短缺範疇從電容類擴至電感電阻，供應鏈衝擊面加寬，且江海電容備忘錄指出全球缺口約20%+'
+    evidence_source: qualitative
+- event: 被動元件2018超級循環毛利率重估升評
+  keywords:
+  - 2018超級循環
+  - 毛利率重估
+  - 國巨
+  - B/B ratio
+  - EPS上修
+  - 目標價
+  horizon: cycle
+  impact:
+    direction: bullish
+    description: 2018超級循環毛利率作為估值天花板參考，帶動被動元件廠EPS目標大幅上修，誘發機構買盤
+    sectors:
+    - passive_components
+    stocks:
+      passive_components:
+      - '2327'
+      - '2492'
+      - '3026'
+    last_updated_reason: '2026-06-03: EP665以2018年國巨毛利率6X%為類比上限，搭配B/B ratio上拉（特規品稼動90%、標準品80%），市場開始以2018超級循環框架重新試算EPS與目標價，觸發分析師調升評等與資金進場'
+    evidence_source: qualitative
+- event: AI PC地端推論商業化帶動筆電OEM題材重估
+  keywords:
+  - AI PC
+  - 地端推論
+  - DGX Spark
+  - N1X
+  - Computex
+  - 開源模型
+  - Token費用
+  - 筆電OEM
+  - Rerate
+  horizon: trend
+  impact:
+    direction: bullish
+    description: 地端AI推論降低雲端Token依賴，推動高規AI PC換機潮，帶動筆電ODM高單價機種出貨量與毛利率向上重評
+    sectors:
+    - laptop_ODM
+    - AI_PC_chip
+    stocks:
+      laptop_ODM:
+      - '2382'
+      - '2324'
+      - '3231'
+      AI_PC_chip:
+      - '2454'
+    last_updated_reason: '2026-06-04: Computex 2026 DGX Spark（N1X）亮相，輝達與聯發科雙雙押注AI PC；股癌EP667指出開源模型持續成熟後可滿足企業地端推論需求、大幅降低雲端Token費用，形成AI PC第二波需求的基本面支撐，且高單價AI PC若出貨強勁可帶動筆電OEM毛利率Rerate，與現有AI伺服器需求爆發規則邏輯不同'
+    evidence_source: qualitative

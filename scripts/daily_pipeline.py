@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import traceback
 from datetime import datetime
@@ -35,6 +36,47 @@ if str(_ROOT) not in sys.path:
 from scripts.lib.config import config
 from scripts.lib.telegram import send as tg_send
 from scripts.lib.twse_client import get_prices, format_price_line, get_yf_ticker
+
+# 價格帶預設值（Step 4 初始設定 / Step 4.5 後處理截斷）
+_ENTRY_LOW_FACTOR  = 0.97   # entry_low  = close × 0.97
+_ENTRY_HIGH_FACTOR = 1.00   # entry_high = close × 1.00
+_TARGET_FACTOR     = 1.15   # target     = close × 1.15（+15%，報酬空間才值得承擔風險）
+_STOP_FACTOR       = 0.92   # stop_loss  = close × 0.92（-8%，真正代表論點失效而非普通波動）
+_TA_ENTRY_FLOOR    = 0.95   # TA 後處理：進場價下緣截斷
+_TA_ENTRY_CEIL     = 1.10   # TA 後處理：進場價上緣截斷
+
+
+# --------------------------------------------------------------------------- #
+# 共用工具
+# --------------------------------------------------------------------------- #
+
+def _parse_llm_json_array(raw: str) -> list:
+    """從 LLM 回傳字串中提取第一個 JSON 陣列。
+
+    先用 greedy regex，失敗時改用 bracket-depth 計數精確截取。失敗一律回傳 []。
+    """
+    m = re.search(r"\[.*\]", raw, re.DOTALL)
+    if not m:
+        return []
+    try:
+        return json.loads(m.group())
+    except json.JSONDecodeError:
+        bracket_depth = 0
+        end = 0
+        for i, ch in enumerate(raw):
+            if ch == "[":
+                bracket_depth += 1
+            elif ch == "]":
+                bracket_depth -= 1
+                if bracket_depth == 0:
+                    end = i + 1
+                    break
+        if not end:
+            return []
+        try:
+            return json.loads(raw[raw.index("["):end])
+        except (json.JSONDecodeError, ValueError):
+            return []
 
 
 # --------------------------------------------------------------------------- #
@@ -61,53 +103,55 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     print(f"  Market Track Daily Pipeline — {today}{mode_tag}")
     print(f"{'='*60}\n")
 
-    # ── Step 1：擷取資料 ──────────────────────────────────────────────
+    # ── Step 1/10：擷取資料 ──────────────────────────────────────────
     raw_texts: list[str] = []
     if not skip_fetch:
         raw_texts = _step_fetch(date_str=today)
     else:
-        print("[1/8] 略過擷取（--skip-fetch）")
+        print("[1/10] 略過擷取（--skip-fetch）")
 
     if fetch_only:
         print(f"\n✅ --fetch-only 完成 — {today}")
         return 0
 
-    # ── Step 2：LLM 事件分類 ─────────────────────────────────────────
-    matched_events = _step_classify(raw_texts)
+    rules = _load_rules()
 
-    # ── Step 3：規則匹配 → 建議清單 ──────────────────────────────────
-    recommendations = _step_match_rules(matched_events)
+    # ── Step 2/10：LLM 事件分類 ─────────────────────────────────────
+    matched_events = _step_classify(raw_texts, rules=rules)
 
-    # ── Step 3.5：大盤方向濾網（台指/TWII）────────────────────────────
+    # ── Step 3/10：規則匹配 → 建議清單 ──────────────────────────────
+    recommendations = _step_match_rules(matched_events, rules=rules)
+
+    # ── Step 4/10：大盤方向濾網（台指/TWII）─────────────────────────
     recommendations = _step_market_filter(recommendations)
 
-    # ── Step 4：補齊股價（TWSE 今日收盤 + ±3/5% 預設值）────────────────
+    # ── Step 5/10：補齊股價（TWSE 今日收盤 + ±3/5% 預設值）──────────
     recommendations = _step_enrich_prices(recommendations)
 
-    # ── Step 4.5：技術面分析（yfinance MA/RSI + batch LLM）─────────────
+    # ── Step 6/10：技術面分析（yfinance MA/RSI + batch LLM）─────────
     recommendations = _step_enrich_ta(recommendations)
 
-    # ── Step 4.7：投資組合決策（持倉感知）────────────────────────────
+    # ── Step 7/10（前）：投資組合決策（持倉感知）───────────────────
     open_positions = _load_open_positions()
-    recommendations, position_updates = _step_portfolio_decision(recommendations, open_positions)
+    recommendations, position_updates = _step_portfolio_decision(recommendations, open_positions, dry_run=dry_run)
 
-    # ── Step 5：儲存日報 ─────────────────────────────────────────────
+    # ── Step 7/10：儲存日報 ─────────────────────────────────────────
     report = _step_save_report(recommendations, matched_events, today_compact, position_updates)
 
-    # ── Step 6：Telegram 推送 ─────────────────────────────────────────
+    # ── Step 8/10：Telegram 推送 ─────────────────────────────────────
     if not dry_run:
         _step_notify(report, today)
     else:
-        print("[6/8] Dry-run，略過 Telegram 推送")
+        print("[8/10] Dry-run，略過 Telegram 推送")
         print(_build_telegram_msg(report, today))
 
-    # ── Step 7：績效追蹤 + 自動改寫規則庫 ────────────────────────────
+    # ── Step 9/10：績效追蹤 + 自動改寫規則庫 ────────────────────────
     _step_track_performance(shadow=shadow, today=today)
 
-    # ── Step 8：DISCOVER — 探索新事件規則 ────────────────────────────
+    # ── Step 10/10：DISCOVER — 探索新事件規則 ────────────────────────
     _step_discover_rules(raw_texts, shadow=shadow, today=today)
 
-    # ── Step 9：更新 PERFORMANCE.md 並推送 GitHub ─────────────────────
+    # ── Step 9/10（後）：更新 PERFORMANCE.md ─────────────────────────
     _step_update_perf_report(today=today)
 
     # ── Step 10：自動審閱 shadow 提案 ────────────────────────────────
@@ -119,7 +163,7 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
 
 
 def _step_update_perf_report(today: str | None = None) -> None:
-    print("[9/9] 更新 PERFORMANCE.md…")
+    print("[9/10] 更新 PERFORMANCE.md…")
     try:
         from scripts.generate_perf_report import run as perf_report_run
         perf_report_run(date_str=today)
@@ -132,7 +176,7 @@ def _step_update_perf_report(today: str | None = None) -> None:
 # --------------------------------------------------------------------------- #
 
 def _step_fetch(date_str: str | None = None) -> list[str]:
-    print("[1/8] 擷取 Trump 貼文 & 股癌筆記…")
+    print("[1/10] 擷取 Trump 貼文 & 股癌筆記…")
     trump_texts: list[str] = []
     gua_texts: list[str] = []
 
@@ -176,16 +220,18 @@ def _step_fetch(date_str: str | None = None) -> list[str]:
 # Step 2：LLM 事件分類
 # --------------------------------------------------------------------------- #
 
-def _step_classify(texts: list[str]) -> list[dict]:
-    print("[2/8] LLM 事件分類…")
+def _step_classify(texts: list[str], rules: list[dict] | None = None) -> list[dict]:
+    print("[2/10] LLM 事件分類…")
     if not texts:
         print("       無文字輸入，略過 LLM。")
         return []
 
+    if rules is None:
+        rules = _load_rules()
     try:
         from scripts.llm_client import analyze
         from scripts.lib.market_filter import get_market_state
-        rules = _load_rules_summary()
+        rules_summary = [r["event"] for r in rules]
         # 股癌排前面（完整），Trump 取前 8 則（macro 事件）
         gua_texts = [t for t in texts if t.startswith("[股癌")]
         trump_texts = [t for t in texts if not t.startswith("[股癌")]
@@ -213,46 +259,32 @@ def _step_classify(texts: list[str]) -> list[dict]:
             '"confidence": 0.0~1.0, "direction": "bullish|bearish|mixed", '
             '"summary": "一句話摘要", '
             '"source_date": "消息來源日期或集數，從文字前綴 [MM/DD] 或 [股癌EPxxx] 取得，例如：05/06、EP659"}]\n\n'
-            f"規則庫已知事件（供參考，不限於此）：{json.dumps(rules, ensure_ascii=False)}\n\n"
+            f"規則庫已知事件（供參考，不限於此）：{json.dumps(rules_summary, ensure_ascii=False)}\n\n"
             f"{market_ctx}"
             f"待分析文字：\n{combined}"
         )
         raw = analyze(prompt)
-        import re
-        m = re.search(r"\[.*?\](?=\s*$|\s*[^,\]\[])", raw, re.DOTALL)
-        if not m:
-            m = re.search(r"\[.*\]", raw, re.DOTALL)
-        if m:
-            try:
-                events = json.loads(m.group())
-            except json.JSONDecodeError:
-                # LLM 在 JSON 後面附了說明文字，嘗試只截取到第一個完整陣列
-                bracket_depth = 0
-                end = 0
-                for i, ch in enumerate(raw):
-                    if ch == "[":
-                        bracket_depth += 1
-                    elif ch == "]":
-                        bracket_depth -= 1
-                        if bracket_depth == 0:
-                            end = i + 1
-                            break
-                events = json.loads(raw[raw.index("["):end]) if end else []
-            print(f"       偵測到 {len(events)} 個事件")
-            return events
+        events = _parse_llm_json_array(raw)
+        print(f"       偵測到 {len(events)} 個事件")
+        return events
     except Exception as e:
         print(f"       LLM 分類失敗（fallback 關鍵字比對）：{e}")
 
     # Fallback：關鍵字比對
-    return _keyword_classify(texts)
+    return _keyword_classify(texts, rules=rules)
 
 
-def _keyword_classify(texts: list[str]) -> list[dict]:
+def _load_rules() -> list[dict]:
+    """載入完整規則清單，失敗回傳 []。"""
     from ruamel.yaml import YAML as _YAML
     _y = _YAML()
     with open(config.rules_file, encoding="utf-8") as f:
-        rules = _y.load(f) or []
+        return _y.load(f) or []
 
+
+def _keyword_classify(texts: list[str], rules: list[dict] | None = None) -> list[dict]:
+    if rules is None:
+        rules = _load_rules()
     combined = " ".join(texts).lower()
     found = []
     for rule in rules:
@@ -269,11 +301,7 @@ def _keyword_classify(texts: list[str]) -> list[dict]:
 
 
 def _load_rules_summary() -> list[str]:
-    from ruamel.yaml import YAML as _YAML
-    _y = _YAML()
-    with open(config.rules_file, encoding="utf-8") as f:
-        rules = _y.load(f) or []
-    return [r["event"] for r in rules]
+    return [r["event"] for r in _load_rules()]
 
 
 def _load_shadow_proposed_events(today: str | None = None) -> list[str]:
@@ -307,16 +335,14 @@ def _load_open_positions() -> list[dict]:
 # Step 3：規則匹配
 # --------------------------------------------------------------------------- #
 
-def _step_match_rules(matched_events: list[dict]) -> list[dict]:
-    print(f"[3/8] 規則匹配（{len(matched_events)} 個事件）…")
+def _step_match_rules(matched_events: list[dict],
+                      rules: list[dict] | None = None) -> list[dict]:
+    print(f"[3/10] 規則匹配（{len(matched_events)} 個事件）…")
     if not matched_events:
         return []
 
-    from ruamel.yaml import YAML as _YAML
-    _y = _YAML()
-    with open(config.rules_file, encoding="utf-8") as f:
-        rules = _y.load(f) or []
-
+    if rules is None:
+        rules = _load_rules()
     rule_map = {r["event"]: r for r in rules}
     recommendations: list[dict] = []
     seen_codes: set[str] = set()
@@ -359,6 +385,7 @@ def _step_match_rules(matched_events: list[dict]) -> list[dict]:
                 seen_codes.add(code)
                 rule_counts[rule_id] = rule_counts.get(rule_id, 0) + 1
                 action = _direction_to_action(direction, sector)
+                _horizon = rule.get("horizon", "trend")
                 recommendations.append({
                     "code": code,
                     "name": "",  # 由 Step 4 填入
@@ -371,6 +398,8 @@ def _step_match_rules(matched_events: list[dict]) -> list[dict]:
                     "entry_high": None,
                     "target": None,
                     "stop_loss": None,
+                    "horizon": _horizon,
+                    "max_holding_days": {"event": 30, "trend": 90, "cycle": 180}.get(_horizon, 90),
                 })
 
     print(f"       產生 {len(recommendations)} 筆建議（現有追蹤 {len(active_pairs)} 對）")
@@ -398,7 +427,7 @@ def _step_market_filter(recs: list[dict]) -> list[dict]:
     bearish（台股空頭 + 外資賣超 + 美股收跌）：買進建議信心度 × 0.75
     neutral / unknown：不過濾
     """
-    print("[3.5] 大盤方向濾網…")
+    print("[4/10] 大盤方向濾網…")
     from scripts.lib.market_filter import get_market_state
     mkt = get_market_state()
     _state_to_bias = {"bull": "bullish", "bear": "bearish", "neutral": "neutral", "unknown": "neutral"}
@@ -430,7 +459,7 @@ def _step_market_filter(recs: list[dict]) -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 def _step_enrich_prices(recs: list[dict]) -> list[dict]:
-    print("[4/8] 查詢股價…")
+    print("[5/10] 查詢股價…")
     if not recs:
         return []
 
@@ -444,10 +473,10 @@ def _step_enrich_prices(recs: list[dict]) -> list[dict]:
                 close = info.get("close")
                 if close:
                     rec["last_close"] = close
-                    rec["entry_low"] = round(close * 0.97, 1)
-                    rec["entry_high"] = round(close * 1.00, 1)
-                    rec["target"] = round(close * 1.05, 1)
-                    rec["stop_loss"] = round(close * 0.95, 1)
+                    rec["entry_low"]  = round(close * _ENTRY_LOW_FACTOR,  1)
+                    rec["entry_high"] = round(close * _ENTRY_HIGH_FACTOR, 1)
+                    rec["target"]     = round(close * _TARGET_FACTOR,     1)
+                    rec["stop_loss"]  = round(close * _STOP_FACTOR,       1)
     except Exception as e:
         print(f"       TWSE 股價查詢失敗（繼續）：{e}")
 
@@ -495,29 +524,21 @@ def _compute_ta(hist, current_close: float | None = None) -> dict:
     }
 
 
-def _step_enrich_ta(recs: list[dict]) -> list[dict]:
-    """yfinance 拉歷史 OHLCV → 計算 TA → 一次 LLM call → 覆寫 entry/target/stop/reason。"""
-    if not recs:
-        return recs
-    print("[4.5] 技術面分析（yfinance + LLM）…")
+def _fetch_ta_data(recs: list[dict], yf) -> dict[str, dict]:
+    """每支股票下載 yfinance 歷史資料並計算 TA 指標。
 
-    try:
-        import yfinance as yf
-    except ImportError:
-        print("       yfinance 未安裝，略過。")
-        return recs
-
-    # 每支股票抓歷史資料；順便補上櫃股名稱（TWSE 查不到的）
+    副作用：若 rec["name"] 為空，從 yfinance info 填入名稱（上櫃股 TWSE 查不到）。
+    回傳 ta_map: {code: {close, ma5, ma20, ma60, high20, low20, rsi}}。
+    """
     ta_map: dict[str, dict] = {}
     for rec in recs:
         code = rec["code"]
-        current_close = rec.get("last_close")
         yf_sym = get_yf_ticker(code)
         try:
             ticker = yf.Ticker(yf_sym)
             h = ticker.history(period="3mo", auto_adjust=True)
             if not h.empty and len(h) >= 20:
-                ta_map[code] = _compute_ta(h, current_close)
+                ta_map[code] = _compute_ta(h, rec.get("last_close"))
                 if not rec.get("name"):
                     info = ticker.info
                     yf_name = info.get("shortName") or info.get("longName") or ""
@@ -525,30 +546,27 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
                         rec["name"] = yf_name.replace("*", "").strip()
         except Exception:
             pass
+    return ta_map
 
-    if not ta_map:
-        print("       TA 資料全部失敗，使用 ±3/5% 預設值")
-        return recs
 
-    # 組一次性批次 LLM prompt（table 格式）
-    header = "| 代碼 | 名稱 | 現價 | MA5 | MA20 | MA60 | 近20日高 | 近20日低 | RSI | 方向 |"
-    sep    = "|------|------|------|-----|------|------|---------|---------|-----|------|"
+def _build_ta_prompt(recs: list[dict], ta_map: dict[str, dict]) -> tuple[str, list[str]]:
+    """組裝批次 LLM prompt，回傳 (prompt_str, valid_codes)。"""
+    header = "| 代碼 | 名稱 | 現價 | MA5 | MA20 | MA60 | 近20日高 | 近20日低 | RSI | 方向 | 視野 |"
+    sep    = "|------|------|------|-----|------|------|---------|---------|-----|------|------|"
     rows   = [header, sep]
-    valid_codes = []
+    valid_codes: list[str] = []
     for rec in recs:
         code = rec["code"]
         if code not in ta_map:
             continue
         ta = ta_map[code]
+        horizon = rec.get("horizon", "trend")
         rows.append(
             f"| {code} | {rec.get('name', code)} | {ta['close']} "
             f"| {ta['ma5']} | {ta['ma20']} | {ta['ma60'] or 'N/A'} "
-            f"| {ta['high20']} | {ta['low20']} | {ta['rsi']} | {rec.get('action', '停看等')} |"
+            f"| {ta['high20']} | {ta['low20']} | {ta['rsi']} | {rec.get('action', '停看等')} | {horizon} |"
         )
         valid_codes.append(code)
-
-    if not valid_codes:
-        return recs
 
     prompt = (
         "以下是今日推薦股票的技術面資料，請根據操作方向給出進場區間、目標、停損與一句中文理由。\n\n"
@@ -557,38 +575,68 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         "- 觀察買進：進場接近 MA20 支撐，目標近20日高點，停損 MA60 下方\n"
         "- 觀察賣出：提供合理減碼價位，停損設在近期壓力上方\n"
         "- 停看等：提供關鍵支撐/壓力區間作為參考\n\n"
+        "視野說明（請根據各股的視野欄位，設定符合該時間框架的 entry/target/stop_loss）：\n"
+        "- event（事件驅動，30天）：停損 -8~12%，目標 +15~20%，以近期催化劑消化為退場依據\n"
+        "- trend（趨勢行情，90天）：停損 -12~18%，目標 +20~35%，以趨勢結束或反轉訊號為退場依據\n"
+        "- cycle（景氣循環，180天）：停損 -15~20%，目標 +30~50%，持股需耐心等待循環高點\n\n"
         "【重要限制】台股每日漲跌幅 ±10%，進場區間（entry_low / entry_high）必須在現價的 95%～110% 以內。"
         "若 MA20 遠低於現價（股票過熱），entry 仍需設在現價 -5% 以內的可執行區間，"
         "並在 reason 中說明需等回測，不可直接寫出遙不可及的 MA20 價位。\n\n"
         "只輸出 JSON 陣列，不要其他說明文字：\n"
         '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"reason":"一句話"}]'
     )
+    return prompt, valid_codes
+
+
+def _apply_ta_results(recs: list[dict], items: list[dict]) -> dict:
+    """將 LLM 回傳的 TA 結果套用到 recs（in-place），並硬截斷進場價邊界。回傳 {code: item}。"""
+    ta_result = {item["code"]: item for item in items if "code" in item}
+    for rec in recs:
+        item = ta_result.get(rec["code"])
+        if item:
+            for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
+                if item.get(key) is not None:
+                    rec[key] = item[key]
+        close = rec.get("last_close")
+        if close:
+            floor = round(close * _TA_ENTRY_FLOOR, 1)
+            ceil  = round(close * _TA_ENTRY_CEIL,  1)
+            if rec.get("entry_low") is not None:
+                rec["entry_low"]  = max(floor, min(ceil, rec["entry_low"]))
+            if rec.get("entry_high") is not None:
+                rec["entry_high"] = max(floor, min(ceil, rec["entry_high"]))
+    return ta_result
+
+
+def _step_enrich_ta(recs: list[dict]) -> list[dict]:
+    """yfinance 拉歷史 OHLCV → 計算 TA → 一次 LLM call → 覆寫 entry/target/stop/reason。"""
+    if not recs:
+        return recs
+    print("[6/10] 技術面分析（yfinance + LLM）…")
+
+    try:
+        import yfinance as yf
+    except ImportError:
+        print("       yfinance 未安裝，略過。")
+        return recs
+
+    ta_map = _fetch_ta_data(recs, yf)
+    if not ta_map:
+        print("       TA 資料全部失敗，使用 ±3/5% 預設值")
+        return recs
+
+    prompt, valid_codes = _build_ta_prompt(recs, ta_map)
+    if not valid_codes:
+        return recs
 
     try:
         from scripts.llm_client import analyze
-        import re
         raw = analyze(prompt)
-        m = re.search(r"\[.*\]", raw, re.DOTALL)
-        if not m:
+        items = _parse_llm_json_array(raw)
+        if not items:
             print("       TA LLM 未回傳 JSON，使用預設值")
             return recs
-        items = json.loads(m.group())
-        ta_result = {item["code"]: item for item in items if "code" in item}
-        for rec in recs:
-            item = ta_result.get(rec["code"])
-            if item:
-                for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
-                    if item.get(key) is not None:
-                        rec[key] = item[key]
-            # 後處理：硬截斷進場價，下緣不超過 -5%（避免等不到的回測點）
-            close = rec.get("last_close")
-            if close:
-                floor = round(close * 0.95, 1)
-                ceil  = round(close * 1.10, 1)
-                if rec.get("entry_low") is not None:
-                    rec["entry_low"] = max(floor, min(ceil, rec["entry_low"]))
-                if rec.get("entry_high") is not None:
-                    rec["entry_high"] = max(floor, min(ceil, rec["entry_high"]))
+        ta_result = _apply_ta_results(recs, items)
         print(f"       TA 完成，{len(ta_result)} 支股票已更新進出場價")
     except Exception as e:
         print(f"       TA LLM 失敗（使用 ±3/5% 預設值）：{e}")
@@ -603,6 +651,7 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
 def _step_portfolio_decision(
     recs: list[dict],
     open_positions: list[dict],
+    dry_run: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """依持倉狀態讓 LLM 決定每支推薦的操作類型。
 
@@ -648,7 +697,9 @@ def _step_portfolio_decision(
         "請對每支推薦股票決定操作類型：\n"
         "- \"new\"：目前無此股票倉位，建議開新倉\n"
         "- \"add\"：已有倉位，但今日有更好的進場點或訊號更強，建議加倉（獨立計算損益）\n"
-        "- \"raise_target\"：已有倉位，不需加倉，但今日訊號支持上調目標價與停損\n"
+        "- \"raise_target\"：已進場持有（holding）的倉位，今日訊號支持上調目標；"
+        "new_stop 必須低於 entry_low（買進）或高於 entry_high（賣出），"
+        "觀察中（watching）的部位不調整停損\n"
         "- \"hold\"：已有倉位，今日訊號只是再次確認，繼續持有，無需動作\n\n"
         "判斷原則：\n"
         "- 已持倉且浮動獲利 > 5% → 傾向 raise_target 而非 add\n"
@@ -663,12 +714,11 @@ def _step_portfolio_decision(
 
     try:
         from scripts.llm_client import analyze
-        import re
-        raw = analyze(prompt)
-        m = re.search(r"\[.*\]", raw, re.DOTALL)
-        if not m:
+        raw = analyze(prompt, model=None if dry_run else "claude-opus-4-7")
+        parsed = _parse_llm_json_array(raw)
+        if not parsed:
             raise ValueError("LLM 未回傳 JSON")
-        decisions = {d["code"]: d for d in json.loads(m.group()) if "code" in d}
+        decisions = {d["code"]: d for d in parsed if "code" in d}
     except Exception as e:
         print(f"       投資組合決策 LLM 失敗（fallback）：{e}")
         decisions = {}
@@ -712,7 +762,7 @@ def _step_portfolio_decision(
 
 def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
                       position_updates: list[dict] | None = None) -> dict:
-    print("[5/8] 儲存日報…")
+    print("[7/10] 儲存日報…")
     from scripts.lib.market_filter import get_market_state
     report = {
         "date": date_compact,
@@ -736,13 +786,57 @@ def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
 # --------------------------------------------------------------------------- #
 
 def _step_notify(report: dict, today: str) -> None:
-    print("[6/8] 推送 Telegram…")
+    print("[8/10] 推送 Telegram…")
     msg = _build_telegram_msg(report, today)
     try:
         result = tg_send(msg)
         print(f"       ✓ message_id={result['result']['message_id']}")
     except Exception as e:
         print(f"       ✗ 推送失敗：{e}")
+
+
+def _partition_report(report: dict) -> dict:
+    """將 report 的建議拆分為顯示分組。"""
+    recs = report.get("recommendations", [])
+    new_recs = [r for r in recs if r.get("update_type") != "add"]
+    add_recs = [r for r in recs if r.get("update_type") == "add"]
+    return {
+        "all_recs":    recs,
+        "buy":         [r for r in new_recs if r.get("action") == "觀察買進"],
+        "sell":        [r for r in new_recs if r.get("action") == "觀察賣出"],
+        "watch":       [r for r in new_recs if r.get("action") == "停看等"],
+        "add_recs":    add_recs,
+        "pos_updates": report.get("position_updates", []),
+    }
+
+
+def _fmt_rec(r: dict, label_override: str | None = None) -> list[str]:
+    """將一筆建議格式化為 Telegram 訊息行列。"""
+    action = r.get("action", "")
+    conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
+    name = r.get("name", "").replace("*", "").strip()
+    tag = f" `{label_override}`" if label_override else ""
+    out = [f"• {r['code']} {name}{conf_str}{tag}"]
+    el, eh = r.get("entry_low"), r.get("entry_high")
+    tgt, stp = r.get("target"), r.get("stop_loss")
+    if el and eh:
+        label = "減碼" if action == "觀察賣出" else "進場"
+        price_line = f"  {label} {el}-{eh}"
+        if tgt:
+            price_line += f"  目標 {tgt}"
+        if stp:
+            price_line += f"  停損 {stp}"
+        out.append(price_line)
+    elif r.get("last_close"):
+        price_line = f"  現價 {r['last_close']}"
+        if stp:
+            price_line += f"  停損 {stp}"
+        out.append(price_line)
+    if r.get("reason"):
+        out.append(f"  ↳ {r['reason']}")
+    elif r.get("rule_id"):
+        out.append(f"  依據：{r['rule_id']}")
+    return out
 
 
 def _build_telegram_msg(report: dict, today: str) -> str:
@@ -761,41 +855,9 @@ def _build_telegram_msg(report: dict, today: str) -> str:
                     lines.append(f"  ↳ {e['summary']}")
             lines.append("")
 
-    recs = report.get("recommendations", [])
-    new_recs  = [r for r in recs if r.get("update_type") != "add"]
-    add_recs  = [r for r in recs if r.get("update_type") == "add"]
-    pos_updates = report.get("position_updates", [])
-
-    def _fmt_rec(r: dict, label_override: str | None = None) -> list[str]:
-        action = r.get("action", "")
-        conf_str = f"（信心 {r['confidence']:.2f}）" if r.get("confidence") else ""
-        name = r.get("name", "").replace("*", "").strip()
-        tag = f" `{label_override}`" if label_override else ""
-        out = [f"• {r['code']} {name}{conf_str}{tag}"]
-        el, eh = r.get("entry_low"), r.get("entry_high")
-        tgt, stp = r.get("target"), r.get("stop_loss")
-        if el and eh:
-            label = "減碼" if action == "觀察賣出" else "進場"
-            price_line = f"  {label} {el}-{eh}"
-            if tgt:
-                price_line += f"  目標 {tgt}"
-            if stp:
-                price_line += f"  停損 {stp}"
-            out.append(price_line)
-        elif r.get("last_close"):
-            price_line = f"  現價 {r['last_close']}"
-            if stp:
-                price_line += f"  停損 {stp}"
-            out.append(price_line)
-        if r.get("reason"):
-            out.append(f"  ↳ {r['reason']}")
-        elif r.get("rule_id"):
-            out.append(f"  依據：{r['rule_id']}")
-        return out
-
-    buy   = [r for r in new_recs if r.get("action") == "觀察買進"]
-    sell  = [r for r in new_recs if r.get("action") == "觀察賣出"]
-    watch = [r for r in new_recs if r.get("action") == "停看等"]
+    groups = _partition_report(report)
+    buy, sell, watch = groups["buy"], groups["sell"], groups["watch"]
+    add_recs, pos_updates = groups["add_recs"], groups["pos_updates"]
 
     if buy:
         lines.append("📈 *建議觀察買進*")
@@ -836,7 +898,7 @@ def _build_telegram_msg(report: dict, today: str) -> str:
 
     if not buy and not watch and not add_recs and not pos_updates:
         lines.append("今日無明確建議標的，維持觀望。")
-        matched_rule_ids = {r.get("rule_id") for r in recs}
+        matched_rule_ids = {r.get("rule_id") for r in groups["all_recs"]}
         unmatched = [e for e in events if e.get("event") not in matched_rule_ids and e.get("confidence", 0) >= 0.5]
         if unmatched:
             lines.append("\n⚠️ *偵測到以下事件（規則庫尚無對應標的）*")
@@ -855,7 +917,7 @@ def _build_telegram_msg(report: dict, today: str) -> str:
 # --------------------------------------------------------------------------- #
 
 def _step_track_performance(shadow: bool = False, today: str | None = None) -> None:
-    print("[7/8] 績效追蹤（昨日建議）…")
+    print("[9/10] 績效追蹤（昨日建議）…")
     try:
         from scripts.track_recommendation_performance import run as perf_run
         perf_run(shadow=shadow, today_str=today)
@@ -870,7 +932,7 @@ def _step_track_performance(shadow: bool = False, today: str | None = None) -> N
 # --------------------------------------------------------------------------- #
 
 def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str | None = None) -> None:
-    print("[8/8] DISCOVER — 探索新事件規則…")
+    print("[10/10] DISCOVER — 探索新事件規則…")
     if not raw_texts:
         print("       無文字輸入，略過。")
         return
@@ -879,7 +941,6 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
         return
 
     try:
-        import re
         from scripts.llm_client import analyze
         from scripts.auto_update_rules import apply_updates
 
@@ -924,26 +985,7 @@ def _step_discover_rules(raw_texts: list[str], shadow: bool = False, today: str 
         )
 
         raw = analyze(prompt)
-
-        m = re.search(r"\[.*\]", raw, re.DOTALL)
-        if not m:
-            print("       未解析到 JSON，略過。")
-            return
-
-        try:
-            items = json.loads(m.group())
-        except json.JSONDecodeError:
-            bracket_depth = 0
-            end = 0
-            for i, ch in enumerate(raw):
-                if ch == "[":
-                    bracket_depth += 1
-                elif ch == "]":
-                    bracket_depth -= 1
-                    if bracket_depth == 0:
-                        end = i + 1
-                        break
-            items = json.loads(raw[raw.index("["):end]) if end else []
+        items = _parse_llm_json_array(raw)
         if not items:
             print("       Claude 判斷無新事件值得新增。")
             return
@@ -1002,7 +1044,7 @@ def _load_source_trust() -> dict:
 
 def _step_auto_review_proposals() -> None:
     """依 source_trust.yml 自動審閱 shadow 提案，approve 寫入 YAML，reject 記錄到 _reviewed.json。"""
-    print("[10] 自動審閱 shadow 提案…")
+    print("[10/10] 自動審閱 shadow 提案…")
     try:
         from scripts.review_shadow_proposals import _load_all_proposals, _load_reviewed, _save_reviewed
         from scripts.auto_update_rules import apply_updates
@@ -1080,10 +1122,8 @@ def _step_auto_review_proposals() -> None:
             try:
                 from scripts.llm_client import analyze
                 raw = analyze(prompt)
-                import re
-                m = re.search(r"\[.*\]", raw, re.DOTALL)
-                if m:
-                    decisions = json.loads(m.group())
+                decisions = _parse_llm_json_array(raw)
+                if decisions:
                     dec_map = {d["event"]: d for d in decisions if "event" in d}
                     for p in need_llm:
                         dec = dec_map.get(p["event"])
