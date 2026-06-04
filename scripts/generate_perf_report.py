@@ -40,12 +40,17 @@ def run(date_str: str | None = None) -> None:
         from scripts.auto_update_rules import apply_updates
         apply_updates(rule_updates)
 
-    md = _build_markdown(rows, open_pos)
-    out = config.project_root / "PERFORMANCE.md"
-    out.write_text(md, encoding="utf-8")
-    print(f"[report] → {out}")
+    md   = _build_markdown(rows, open_pos)
+    html = _build_html(rows, open_pos)
 
-    _git_commit(str(out), date_str=date_str)
+    out_md   = config.project_root / "PERFORMANCE.md"
+    out_html = config.project_root / "PERFORMANCE.html"
+    out_md.write_text(md,   encoding="utf-8")
+    out_html.write_text(html, encoding="utf-8")
+    print(f"[report] → {out_md}")
+    print(f"[report] → {out_html}")
+
+    _git_commit([str(out_md), str(out_html)], date_str=date_str)
 
 
 # --------------------------------------------------------------------------- #
@@ -366,24 +371,249 @@ def _check_rule_performance_updates(rows: list[dict]) -> list[dict]:
     return updates
 
 
-def _git_commit(filepath: str, date_str: str | None = None) -> None:
-    root = str(config.project_root)
+def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
+    now  = datetime.now().strftime("%Y-%m-%d %H:%M")
+    days = sorted({r["report_date"] for r in rows})
+
+    stats_all      = _compute_stats(rows)
+    baseline_rows  = [r for r in rows if r.get("report_date", "") >= BASELINE_DATE]
+    stats_baseline = _compute_stats(baseline_rows)
+
+    from scripts.auto_update_rules import _load_rules as _lr
+    try:
+        rules_map = {r["event"]: r for r in _lr()}
+    except Exception:
+        rules_map = {}
+
+    def _h(s: dict, label: str) -> str:
+        n = s["closed"]
+        hit  = f"{s['target_hits']/n*100:.0f}%" if n else "—"
+        stop = f"{s['stop_hits']/n*100:.0f}%"   if n else "—"
+        pf   = f"{s['profit_factor']:.2f}"       if s["profit_factor"] is not None else "—"
+        avg  = f"{s['avg_pct']:+.1f}%"           if s["avg_pct"]        is not None else "—"
+        pnl  = f"{s['total_pnl']:+,.0f} 元"      if s["pnl_count"] else "—"
+        pf_color = "#28a745" if (s["profit_factor"] or 0) >= 1 else "#dc3545"
+        return f"""
+        <div class="stat-card">
+          <h3>{label}</h3>
+          <table class="kv">
+            <tr><td>完整交易筆數</td><td><b>{n}</b></td></tr>
+            <tr><td>達標率</td><td style="color:#28a745"><b>{hit}</b></td></tr>
+            <tr><td>停損率</td><td style="color:#dc3545"><b>{stop}</b></td></tr>
+            <tr><td>Profit Factor</td><td style="color:{pf_color}"><b>{pf}</b></td></tr>
+            <tr><td>平均每筆損益</td><td><b>{avg}</b></td></tr>
+            <tr><td>模擬損益合計</td><td><b>{pnl}</b></td></tr>
+          </table>
+        </div>"""
+
+    # 規則績效表格
+    closed_rows = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
+    by_rule: dict[str, list[dict]] = defaultdict(list)
+    for r in closed_rows:
+        by_rule[r.get("rule_id", "未知")].append(r)
+
+    rule_rows_html = ""
+    for rule, recs in sorted(by_rule.items(), key=lambda x: -len(x[1])):
+        t    = sum(1 for r in recs if r["close_reason"] == "triggered_target")
+        s    = sum(1 for r in recs if r["close_reason"] == "triggered_stop")
+        rate = t / len(recs) if recs else 0
+        rate_str = f"{rate*100:.0f}%"
+        rate_color = "#28a745" if rate >= 0.5 else "#dc3545"
+
+        cfg = rules_map.get(rule)
+        if cfg is None:
+            status_html = '<span style="color:#6c757d">⚫ 已移除</span>'
+        elif cfg.get("disabled"):
+            status_html = '<span style="color:#dc3545">🔴 停用</span>'
+        else:
+            mc = cfg.get("min_confidence", 0.4)
+            status_html = f'<span style="color:#28a745">🟢 門檻 {mc:.2f}</span>'
+
+        rule_rows_html += f"""
+        <tr>
+          <td>{rule}</td>
+          <td style="text-align:center">{len(recs)}</td>
+          <td style="text-align:center;color:#28a745">{t}</td>
+          <td style="text-align:center;color:#dc3545">{s}</td>
+          <td style="text-align:center;color:{rate_color}"><b>{rate_str}</b></td>
+          <td>{status_html}</td>
+        </tr>"""
+
+    # 最近 30 筆明細
+    recent = sorted(rows, key=lambda r: r.get("close_date", ""), reverse=True)[:30]
+    trade_rows_html = ""
+    for r in recent:
+        cr = r.get("close_reason", "")
+        if cr == "triggered_target":
+            row_bg = "background:#d4edda"
+            badge  = '<span style="color:#28a745">✅ 達標</span>'
+        elif cr == "triggered_stop":
+            row_bg = "background:#f8d7da"
+            badge  = '<span style="color:#dc3545">❌ 停損</span>'
+        elif cr in ("still_open", "triggered_hold"):
+            row_bg = "background:#fff3cd"
+            badge  = "⏳ 持有中"
+        else:
+            row_bg = "background:#f8f9fa"
+            badge  = cr or "—"
+
+        ep_raw = r.get("actual_entry_price") or ""
+        xp_raw = r.get("exit_price") or ""
+        try:
+            ep = float(ep_raw); xp = float(xp_raw)
+            is_sell = r.get("action") == "觀察賣出"
+            raw = (ep - xp) / ep if is_sell else (xp - ep) / ep
+            pnl_str = f"{raw*CAPITAL_PER_TRADE:+,.0f}"
+            pct_str = f"({raw*100:+.1f}%)"
+            pnl_color = "#28a745" if raw > 0 else "#dc3545"
+        except (ValueError, TypeError):
+            pnl_str = "—"; pct_str = ""; pnl_color = "#333"
+
+        trade_rows_html += f"""
+        <tr style="{row_bg}">
+          <td>{r.get('report_date','')}</td>
+          <td>{r.get('code','')} {r.get('name','')}</td>
+          <td style="font-size:0.85em;max-width:180px">{r.get('rule_id','')}</td>
+          <td style="text-align:right">{ep_raw or '—'}</td>
+          <td style="text-align:right">{r.get('target','—')}</td>
+          <td style="text-align:right">{r.get('stop_loss','—')}</td>
+          <td style="text-align:right">{xp_raw or '—'} <small>{pct_str}</small></td>
+          <td style="text-align:right;color:{pnl_color}"><b>{pnl_str}</b></td>
+          <td>{badge}</td>
+        </tr>"""
+
+    # 持倉表格
+    holding  = [p for p in open_pos if p.get("state") == "holding"]
+    watching = [p for p in open_pos if p.get("state") == "watching"]
+
+    def _pos_row(p: dict) -> str:
+        lc = p.get("last_close"); ep = p.get("actual_entry_price")
+        try:
+            is_sell = p.get("action") == "觀察賣出"
+            raw = (ep - lc) / ep if is_sell else (lc - ep) / ep
+            pnl = f"{raw*100:+.1f}%"
+            pnl_color = "#28a745" if raw > 0 else "#dc3545"
+        except (TypeError, ZeroDivisionError):
+            pnl = "—"; pnl_color = "#333"
+        return (f"<tr><td>{p['code']} {p.get('name','')}</td>"
+                f"<td style='font-size:0.85em'>{p.get('rule_id','')}</td>"
+                f"<td>{p.get('entry_date','—')}</td>"
+                f"<td style='text-align:right'>{ep or '—'}</td>"
+                f"<td style='text-align:right'>{p.get('target','—')}</td>"
+                f"<td style='text-align:right'>{p.get('stop_loss','—')}</td>"
+                f"<td style='text-align:right'>{lc or '—'}</td>"
+                f"<td style='text-align:right;color:{pnl_color}'><b>{pnl}</b></td></tr>")
+
+    holding_rows  = "".join(_pos_row(p) for p in holding)
+    watching_rows = "".join(
+        f"<tr><td>{p['code']} {p.get('name','')}</td>"
+        f"<td style='font-size:0.85em'>{p.get('rule_id','')}</td>"
+        f"<td>{p.get('report_date','—')}</td>"
+        f"<td>{p.get('entry_low','—')}–{p.get('entry_high','—')}</td>"
+        f"<td style='text-align:right'>{p.get('target','—')}</td>"
+        f"<td style='text-align:right'>{p.get('stop_loss','—')}</td>"
+        f"<td style='text-align:center'>{p.get('days_watched',0)}/{MAX_WATCH_DAYS}</td></tr>"
+        for p in watching
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market Track Performance</title>
+<style>
+  body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:16px;color:#333;background:#f5f5f5}}
+  h1{{margin:0 0 4px}}
+  .meta{{color:#888;font-size:0.85em;margin-bottom:20px}}
+  .cards{{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px}}
+  .stat-card{{background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.1);min-width:260px}}
+  .stat-card h3{{margin:0 0 10px;font-size:1em;color:#555}}
+  table{{border-collapse:collapse;width:100%}}
+  th{{background:#f0f0f0;padding:8px 10px;text-align:left;font-size:0.85em;white-space:nowrap}}
+  td{{padding:7px 10px;border-bottom:1px solid #eee;font-size:0.875em}}
+  .kv td:first-child{{color:#666;font-size:0.85em}}
+  .kv td:last-child{{text-align:right}}
+  .section{{background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:20px}}
+  .section h2{{margin:0 0 12px;font-size:1.05em}}
+  details{{margin-bottom:20px}}
+  summary{{cursor:pointer;background:#fff;border-radius:8px;padding:12px 20px;box-shadow:0 1px 3px rgba(0,0,0,.1);font-weight:600;font-size:0.95em}}
+  details[open] summary{{border-radius:8px 8px 0 0;margin-bottom:0}}
+  details .inner{{background:#fff;border-radius:0 0 8px 8px;padding:0 20px 16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}}
+</style>
+</head>
+<body>
+<h1>📊 Market Track Performance</h1>
+<p class="meta">自動生成　最後更新：{now}　觀察 {len(days)} 天（{days[0] if days else '—'} ～ {days[-1] if days else '—'}）　總建議 {len(rows)} 筆</p>
+
+<div class="cards">
+  {_h(stats_all, "全期績效")}
+  {_h(stats_baseline, f"基準期（≥{BASELINE_DATE}）")}
+</div>
+
+<div class="section">
+  <h2>各規則觸發績效</h2>
+  <table>
+    <thead><tr><th>規則</th><th>觸發</th><th>✅ 達標</th><th>❌ 停損</th><th>達標率</th><th>狀態</th></tr></thead>
+    <tbody>{rule_rows_html}</tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>最近 30 筆明細</h2>
+  <table>
+    <thead><tr><th>日期</th><th>股票</th><th>規則</th><th>進場價</th><th>目標</th><th>停損</th><th>出場價</th><th>損益(元)</th><th>結果</th></tr></thead>
+    <tbody>{trade_rows_html}</tbody>
+  </table>
+</div>
+
+<details{"open" if holding else ""}>
+  <summary>已進場持倉 ({len(holding)} 筆)</summary>
+  <div class="inner">
+  <table>
+    <thead><tr><th>股票</th><th>規則</th><th>進場日</th><th>進場價</th><th>目標</th><th>停損</th><th>現價</th><th>浮動損益</th></tr></thead>
+    <tbody>{holding_rows or "<tr><td colspan='8' style='text-align:center;color:#aaa'>無持倉</td></tr>"}</tbody>
+  </table>
+  </div>
+</details>
+
+<details>
+  <summary>觀察中等待進場 ({len(watching)} 筆)</summary>
+  <div class="inner">
+  <table>
+    <thead><tr><th>股票</th><th>規則</th><th>推薦日</th><th>進場區間</th><th>目標</th><th>停損</th><th>觀察天數</th></tr></thead>
+    <tbody>{watching_rows or "<tr><td colspan='7' style='text-align:center;color:#aaa'>無觀察部位</td></tr>"}</tbody>
+  </table>
+  </div>
+</details>
+
+<p style="color:#aaa;font-size:0.8em;margin-top:8px">資料來源：TWSE OpenAPI　系統：trump2twse</p>
+</body>
+</html>
+"""
+
+
+def _git_commit(filepaths: "str | list[str]", date_str: str | None = None) -> None:
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    root  = str(config.project_root)
     label = date_str or datetime.now().strftime("%Y-%m-%d")
     try:
-        subprocess.run(["git", "add", filepath], cwd=root, check=True, capture_output=True)
+        for fp in filepaths:
+            subprocess.run(["git", "add", fp], cwd=root, check=True, capture_output=True)
         result = subprocess.run(
             ["git", "diff", "--cached", "--quiet"],
             cwd=root, capture_output=True
         )
         if result.returncode == 0:
-            print("[report] PERFORMANCE.md 無變動，略過 commit。")
+            print("[report] 報表無變動，略過 commit。")
             return
         subprocess.run(
-            ["git", "commit", "-m", f"perf: update PERFORMANCE.md {label}"],
+            ["git", "commit", "-m", f"perf: update PERFORMANCE {label}"],
             cwd=root, check=True, capture_output=True
         )
         subprocess.run(["git", "push"], cwd=root, check=True, capture_output=True)
-        print("[report] PERFORMANCE.md 已推送到 GitHub。")
+        print("[report] 已推送到 GitHub。")
     except subprocess.CalledProcessError as e:
         print(f"[report] git 操作失敗（非致命）：{e.stderr.decode() if e.stderr else e}")
 
