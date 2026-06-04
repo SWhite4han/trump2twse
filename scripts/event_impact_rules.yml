@@ -920,3 +920,30 @@
           - '3026'
       last_updated_reason: '2026-06-03: EP665以2018年國巨毛利率6X%為類比上限，搭配B/B ratio上拉（特規品稼動90%、標準品80%），市場開始以2018超級循環框架重新試算EPS與目標價，觸發分析師調升評等與資金進場'
       evidence_source: qualitative
+  - event: AI PC地端推論商業化帶動筆電OEM題材重估
+    keywords:
+      - AI PC
+      - 地端推論
+      - DGX Spark
+      - N1X
+      - Computex
+      - 開源模型
+      - Token費用
+      - 筆電OEM
+      - Rerate
+    impact:
+      direction: bullish
+      description: 地端AI推論降低雲端Token依賴，推動高規AI PC換機潮，帶動筆電ODM高單價機種出貨量與毛利率向上重評
+      sectors:
+        - laptop_ODM
+        - AI_PC_chip
+      stocks:
+        laptop_ODM:
+          - '2382'
+          - '2324'
+          - '3231'
+        AI_PC_chip:
+          - '2454'
+      last_updated_reason: '2026-06-04: Computex 2026 DGX Spark（N1X）亮相，輝達與聯發科雙雙押注AI
+        PC；股癌EP667指出開源模型持續成熟後可滿足企業地端推論需求、大幅降低雲端Token費用，形成AI PC第二波需求的基本面支撐，且高單價AI PC若出貨強勁可帶動筆電OEM毛利率Rerate，與現有AI伺服器需求爆發規則邏輯不同'
+      evidence_source: qualitative
