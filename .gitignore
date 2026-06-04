@@ -17,6 +17,7 @@ data/shadow_updates/
 logs/
 *.log
 # data/performance/ 不忽略 — GitHub Actions 靠 git 持久化狀態
+data/performance/*.bak
 
 # IDE
 .vscode/
