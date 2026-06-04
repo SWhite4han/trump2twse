@@ -235,8 +235,9 @@
           - '2303'
         electronics_manufacturing:
           - '2317'
-      last_updated_reason: '2026-05-14: Trump訪中磋商，美中雙方進入脆弱休戰期，有別於半導體禁令的單向管制，此為廣泛貿易關係緩和事件，直接影響台灣科技供應鏈在美中之間的備料與訂單能見度'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-04: 累積達標率 83%（6 筆），調整信心門檻 0.40 → 0.30'
+      evidence_source: quant
+    min_confidence: 0.3
   - event: Vera Rubin換代觸發被動元件超缺
     keywords:
       - Vera Rubin
@@ -352,9 +353,9 @@
           - '2327'
           - '2492'
           - '2472'
-      last_updated_reason: '2026-05-14: EP660明確指出不只MLCC，陶瓷電容、鉭電容、鋁電容、電感、電阻全品類均已啟動漲價，現有規則僅覆蓋MLCC（Vera
-        Rubin）與鋁電容（日系退出）兩條線，缺少全品類聯動擴散這一階段性事件'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-04: 累積達標率 89%（9 筆），調整信心門檻 0.40 → 0.30'
+      evidence_source: quant
+    min_confidence: 0.3
   - event: 成熟製程新廠滿載海外客包產漲價
     keywords:
       - 世界先進
@@ -745,8 +746,9 @@
           - '2356'
           - '2324'
           - '4938'
-      last_updated_reason: '2026-05-31: 股癌EP666明確描述光通段休息後，資金已輪動回ODM/EMS，且ODM/OEM本季交出好成績為基本面支撐，形成有別於光通/資安補漲的新一波籌碼輪動訊號'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-04: 累積達標率 100%（5 筆），調整信心門檻 0.40 → 0.30'
+      evidence_source: quant
+    min_confidence: 0.3
   - event: 美企業軟體AI獲利驗證帶動IGV強勢
     keywords:
       - IGV
