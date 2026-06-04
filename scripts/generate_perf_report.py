@@ -184,10 +184,14 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
             t = sum(1 for r in recs if r["close_reason"] == "triggered_target")
             s = sum(1 for r in recs if r["close_reason"] == "triggered_stop")
             rate = f"{t/len(recs)*100:.0f}%" if recs else "—"
-            rule_cfg  = _rules_map.get(rule, {})
-            disabled  = rule_cfg.get("disabled", False)
-            min_conf  = rule_cfg.get("min_confidence", 0.4)
-            status    = "🔴 停用" if disabled else f"🟢 門檻 {min_conf:.2f}"
+            rule_cfg = _rules_map.get(rule)
+            if rule_cfg is None:
+                status = "⚫ 已移除"
+            elif rule_cfg.get("disabled"):
+                status = "🔴 停用"
+            else:
+                min_conf = rule_cfg.get("min_confidence", 0.4)
+                status   = f"🟢 門檻 {min_conf:.2f}"
             lines.append(f"| {rule} | {len(recs)} | {t} | {s} | {rate} | {status} |")
         lines.append("")
 
