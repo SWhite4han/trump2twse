@@ -330,10 +330,13 @@ def _step_match_rules(matched_events: list[dict]) -> list[dict]:
     rule_counts: dict[str, int] = {}
 
     for ev in matched_events:
-        if ev.get("confidence", 0) < 0.4:
-            continue
         rule = rule_map.get(ev["event"])
         if not rule:
+            continue
+        if rule.get("disabled"):
+            continue
+        min_conf = rule.get("min_confidence", 0.4)
+        if ev.get("confidence", 0) < min_conf:
             continue
 
         rule_id = ev["event"]

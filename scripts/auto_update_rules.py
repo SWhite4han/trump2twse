@@ -1,10 +1,13 @@
 """YAML 規則庫自動改寫模組（Phase 5）。
 
-支援四種操作：
-  DOWNGRADE  bullish → mixed（因績效差）
-  REMOVE     從 stocks 清單移除特定標的
-  ADD        新增標的到 stocks 清單
-  DISCOVER   新增全新 event 區塊
+支援七種操作：
+  DOWNGRADE          bullish → mixed（因績效差）
+  DISABLE            停用規則（disabled: true）── 達標率持續低落時
+  ENABLE             重啟規則（disabled: false）── 規則已修正後
+  CONFIDENCE_ADJUST  調整 min_confidence 門檻（好規則放寬、差規則收緊）
+  REMOVE             從 stocks 清單移除特定標的
+  ADD                新增標的到 stocks 清單
+  DISCOVER           新增全新 event 區塊
 
 安全網：
   - 每次改寫前自動 git commit（版控快照）
@@ -123,6 +126,29 @@ def _apply_one(rules: list, upd: dict) -> bool:
             rule["impact"]["evidence_source"] = evidence
             return True
 
+    elif op == "DISABLE":
+        if rule and not rule.get("disabled"):
+            rule["disabled"] = True
+            rule["impact"]["last_updated_reason"] = reason_str
+            rule["impact"]["evidence_source"] = evidence
+            return True
+
+    elif op == "ENABLE":
+        if rule and rule.get("disabled"):
+            rule["disabled"] = False
+            rule["impact"]["last_updated_reason"] = reason_str
+            rule["impact"]["evidence_source"] = evidence
+            return True
+
+    elif op == "CONFIDENCE_ADJUST":
+        new_threshold = upd.get("min_confidence", 0.4)
+        current = rule.get("min_confidence", 0.4) if rule else 0.4
+        if rule and abs(current - new_threshold) > 0.01:
+            rule["min_confidence"] = round(new_threshold, 2)
+            rule["impact"]["last_updated_reason"] = reason_str
+            rule["impact"]["evidence_source"] = evidence
+            return True
+
     elif op == "REMOVE":
         sector = upd.get("sector", "")
         code = upd.get("stock_code", "")
@@ -191,7 +217,7 @@ def _count_stocks(rules: list) -> int:
 def _would_trigger_circuit_breaker(updates: list[dict], total_stocks: int) -> bool:
     if total_stocks == 0:
         return False
-    mutating_ops = {"REMOVE", "ADD", "DISCOVER", "DOWNGRADE"}
+    mutating_ops = {"REMOVE", "ADD", "DISCOVER", "DOWNGRADE", "DISABLE", "ENABLE", "CONFIDENCE_ADJUST"}
     mutation_count = sum(1 for u in updates if u.get("operation", "").upper() in mutating_ops)
     return mutation_count / total_stocks > _CIRCUIT_BREAKER_RATIO
 

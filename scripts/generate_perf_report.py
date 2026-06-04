@@ -34,6 +34,12 @@ def run(date_str: str | None = None) -> None:
         print("[report] 尚無績效資料，略過。")
         return
 
+    # 累積績效驅動的規則自動調整（先更新 YAML，再產 PERFORMANCE.md 才能反映最新狀態）
+    rule_updates = _check_rule_performance_updates(rows)
+    if rule_updates:
+        from scripts.auto_update_rules import apply_updates
+        apply_updates(rule_updates)
+
     md = _build_markdown(rows, open_pos)
     out = config.project_root / "PERFORMANCE.md"
     out.write_text(md, encoding="utf-8")
@@ -162,18 +168,27 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         by_rule[r.get("rule_id", "未知")].append(r)
 
     if by_rule:
+        from scripts.auto_update_rules import _load_rules as _lr
+        try:
+            _rules_map = {r["event"]: r for r in _lr()}
+        except Exception:
+            _rules_map = {}
+
         lines += [
             "## 各規則觸發績效",
             "",
-            "| 規則 | 觸發 | ✅ 達標 | ❌ 停損 | ⏳ 持有 | 達標率 |",
+            "| 規則 | 觸發 | ✅ 達標 | ❌ 停損 | 達標率 | 狀態 |",
             "|---|---|---|---|---|---|",
         ]
         for rule, recs in sorted(by_rule.items(), key=lambda x: -len(x[1])):
             t = sum(1 for r in recs if r["close_reason"] == "triggered_target")
             s = sum(1 for r in recs if r["close_reason"] == "triggered_stop")
-            h = sum(1 for r in recs if r["close_reason"] == "triggered_hold")
             rate = f"{t/len(recs)*100:.0f}%" if recs else "—"
-            lines.append(f"| {rule} | {len(recs)} | {t} | {s} | {h} | {rate} |")
+            rule_cfg  = _rules_map.get(rule, {})
+            disabled  = rule_cfg.get("disabled", False)
+            min_conf  = rule_cfg.get("min_confidence", 0.4)
+            status    = "🔴 停用" if disabled else f"🟢 門檻 {min_conf:.2f}"
+            lines.append(f"| {rule} | {len(recs)} | {t} | {s} | {rate} | {status} |")
         lines.append("")
 
     # 最近 30 筆明細
@@ -275,6 +290,76 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         "_資料來源：TWSE OpenAPI　系統：[trump2twse](https://github.com/SWhite4han/trump2twse)_",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _check_rule_performance_updates(rows: list[dict]) -> list[dict]:
+    """依累積績效提出規則自動調整（DISABLE / CONFIDENCE_ADJUST）。
+
+    門檻：
+      DISABLE          win_rate < 25% 且 closed_trades ≥ 5
+      CONFIDENCE 放寬  win_rate > 70% 且 closed_trades ≥ 5 → min_confidence = 0.30
+      CONFIDENCE 收緊  win_rate < 40% 且 closed_trades ≥ 5 → min_confidence = 0.50
+    """
+    DISABLE_WIN_RATE  = 0.25
+    BOOST_WIN_RATE    = 0.70
+    TIGHTEN_WIN_RATE  = 0.40
+    MIN_TRADES        = 5
+
+    from scripts.auto_update_rules import _load_rules, _find_rule
+    rules_list = _load_rules()
+    rules_map  = {r["event"]: r for r in rules_list}
+
+    closed = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
+    by_rule: dict[str, list[dict]] = defaultdict(list)
+    for r in closed:
+        by_rule[r.get("rule_id", "")].append(r)
+
+    today   = datetime.now().strftime("%Y-%m-%d")
+    updates = []
+
+    for rule_id, recs in by_rule.items():
+        if len(recs) < MIN_TRADES:
+            continue
+        targets  = sum(1 for r in recs if r["close_reason"] == "triggered_target")
+        win_rate = targets / len(recs)
+        rule     = rules_map.get(rule_id)
+        if not rule:
+            continue
+
+        is_disabled   = rule.get("disabled", False)
+        current_conf  = rule.get("min_confidence", 0.4)
+
+        # 停用：達標率太低
+        if win_rate < DISABLE_WIN_RATE and not is_disabled:
+            updates.append({
+                "operation":       "DISABLE",
+                "event":           rule_id,
+                "reason":          f"累積達標率 {win_rate:.0%}（{targets}/{len(recs)} 筆），低於 {DISABLE_WIN_RATE:.0%} 閾值",
+                "evidence_source": "quant",
+            })
+            print(f"[report] 建議 DISABLE：「{rule_id}」達標率 {win_rate:.0%}")
+            continue  # 已停用就不再調整門檻
+
+        # Confidence 門檻調整（僅針對未停用規則）
+        if not is_disabled:
+            if win_rate > BOOST_WIN_RATE:
+                new_conf = 0.30
+            elif win_rate < TIGHTEN_WIN_RATE:
+                new_conf = 0.50
+            else:
+                new_conf = 0.40
+
+            if abs(current_conf - new_conf) > 0.01:
+                updates.append({
+                    "operation":       "CONFIDENCE_ADJUST",
+                    "event":           rule_id,
+                    "min_confidence":  new_conf,
+                    "reason":          f"累積達標率 {win_rate:.0%}（{len(recs)} 筆），調整信心門檻 {current_conf:.2f} → {new_conf:.2f}",
+                    "evidence_source": "quant",
+                })
+                print(f"[report] 建議 CONFIDENCE_ADJUST：「{rule_id}」{current_conf:.2f} → {new_conf:.2f}")
+
+    return updates
 
 
 def _git_commit(filepath: str, date_str: str | None = None) -> None:
