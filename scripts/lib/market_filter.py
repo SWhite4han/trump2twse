@@ -86,26 +86,24 @@ def _fetch_state() -> dict:
     inst = _fetch_institutional()
     txf  = _fetch_txf_night(last)
 
+    # 連續評分：每 1% 漲跌 = 1 分，各項目有獨立上限避免單一極端值壟斷
     score = 0.0
     if state == "bull":    score += 1.0
     elif state == "bear":  score -= 1.0
 
     foreign_net = inst.get("foreign_net")
     if foreign_net is not None:
-        if foreign_net > 50:    score += 0.8
-        elif foreign_net < -50: score -= 0.8
+        score += max(-1.0, min(1.0, foreign_net / 100.0))
 
     sp500 = us.get("sp500_1d_pct")
     if sp500 is not None:
-        if sp500 > 0.5:    score += 0.5
-        elif sp500 < -0.5: score -= 0.5
+        score += max(-1.5, min(1.5, sp500))
 
     txf_pct = txf.get("txf_pct")
     if txf_pct is not None:
-        if txf_pct > 0.5:    score += 0.6
-        elif txf_pct < -0.5: score -= 0.6
+        score += max(-2.0, min(2.0, txf_pct))
 
-    bias = "bullish" if score > 0.6 else "bearish" if score < -0.6 else "neutral"
+    bias = "bullish" if score > 1.0 else "bearish" if score < -1.0 else "neutral"
 
     bias_parts = [f"台股 {state}（5日 {ret5:+.1f}%）"]
     if "不可用" not in inst["comment"]:
@@ -139,14 +137,24 @@ def _fetch_us_market() -> dict:
         import yfinance as yf
         for label, ticker in [("sp500", "^GSPC"), ("nasdaq", "^IXIC")]:
             hist = yf.download(ticker, period="5d", auto_adjust=True, progress=False, multi_level_index=False)
-            if hist is not None and len(hist) >= 2:
-                pct = (hist["Close"].iloc[-1] - hist["Close"].iloc[-2]) / hist["Close"].iloc[-2] * 100
-                result[f"{label}_1d_pct"] = round(float(pct), 2)
+            if hist is None or hist.empty:
+                continue
+            # 過濾 intraday 部分資料造成的 NaN bar（盤中跑時最新一筆可能未結算）
+            close = hist["Close"].dropna()
+            if len(close) < 2:
+                continue
+            pct = float((close.iloc[-1] - close.iloc[-2]) / close.iloc[-2] * 100)
+            if math.isnan(pct):
+                continue
+            result[f"{label}_1d_pct"] = round(pct, 2)
         s = result["sp500_1d_pct"]
         n = result["nasdaq_1d_pct"]
-        if s is not None:
+        if s is not None and n is not None:
             trend = "收漲" if s > 0 else "收跌"
             result["comment"] = f"S&P500 {s:+.1f}%、Nasdaq {n:+.1f}%，美股{trend}"
+        elif s is not None:
+            trend = "收漲" if s > 0 else "收跌"
+            result["comment"] = f"S&P500 {s:+.1f}%，美股{trend}"
     except Exception as e:
         print(f"       [市場濾網] 美股資料失敗（略過）：{e}")
     return result
@@ -184,7 +192,7 @@ def _fetch_txf_night(twii_close: float) -> dict:
     """從 TAIFEX MIS API 取台指期夜盤近月合約，計算相對今日收盤的隔夜漲跌幅。
 
     pipeline 在台北 23:00 跑時，夜盤（17:00–05:00）已開 6 小時。
-    近月合約 = SymbolID 格式為 TXFx0-M（7碼），按最近成交時間排序取首筆。
+    近月合約 = SymbolID 格式為 TXFx0-M（7碼），以成交量最大者為近月（流動性 proxy）。
     """
     result: dict = {"txf_price": None, "txf_pct": None, "comment": "台指期夜盤不可用"}
     try:
@@ -207,8 +215,13 @@ def _fetch_txf_night(twii_close: float) -> dict:
         ]
         if not candidates:
             return result
-        # 取最近成交的（=近月，流動性最高）
-        candidates.sort(key=lambda q: q.get("CDate", "") + q.get("CTime", ""), reverse=True)
+        # 近月 = 成交量最大者；冷時段或結算切倉時比「最近成交時間」更穩定
+        def _vol(q):
+            try:
+                return int(str(q.get("CTotalVolume", "0")).replace(",", "") or 0)
+            except (ValueError, TypeError):
+                return 0
+        candidates.sort(key=_vol, reverse=True)
         front = candidates[0]
         price = float(front["CLastPrice"])
         pct = round((price - twii_close) / twii_close * 100, 2)
