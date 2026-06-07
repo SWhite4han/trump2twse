@@ -172,7 +172,9 @@ def _try_google_news() -> list[dict]:
                 if link in seen:
                     continue
                 seen.add(link)
-                text = (item.findtext("title", "") + " " + item.findtext("description", "")).strip()
+                # Google News description 只是 `<a>title</a> source` 的 HTML 包裝，
+                # title 已含「標題 - 來源」全部資訊，直接用 title 即可
+                text = item.findtext("title", "").strip()
                 posts.append(_make_post(link, text, item.findtext("pubDate", ""), link))
         except Exception:
             continue
