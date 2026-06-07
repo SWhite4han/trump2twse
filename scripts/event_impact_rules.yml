@@ -786,9 +786,9 @@
           - '2356'
           - '2324'
           - '4938'
-      last_updated_reason: '2026-06-07: 20260606 績效：停損率 100%（4/4 筆）'
+      last_updated_reason: '2026-06-07: 累積達標率 55%（11 筆），調整信心門檻 0.30 → 0.40'
       evidence_source: quant
-    min_confidence: 0.3
+    min_confidence: 0.4
   - event: 美企業軟體AI獲利驗證帶動IGV強勢
     keywords:
       - IGV
