@@ -321,7 +321,7 @@
       - 鈺邦
     horizon: trend
     impact:
-      direction: bullish
+      direction: mixed
       description: 日系產能退出造成結構性缺口，台系鋁電容廠受惠漲價與轉單
       sectors:
         - passive_components
@@ -329,9 +329,8 @@
         passive_components:
           - '2472'
           - '6690'
-      last_updated_reason: '2026-05-14: Panasonic停止OS-CON固態電容生產，Nippon Chemi-Con承接但產能不足已發起漲價，屬供給側結構性收縮，不同於Vera
-        Rubin需求面驅動的MLCC短缺'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-08: 20260607 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: 消費IC恐慌補庫存推升成熟製程稼動
     keywords:
       - 補庫存
