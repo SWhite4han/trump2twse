@@ -998,3 +998,41 @@
       last_updated_reason: '2026-06-04: Computex 2026 DGX Spark（N1X）亮相，輝達與聯發科雙雙押注AI
         PC；股癌EP667指出開源模型持續成熟後可滿足企業地端推論需求、大幅降低雲端Token費用，形成AI PC第二波需求的基本面支撐，且高單價AI PC若出貨強勁可帶動筆電OEM毛利率Rerate，與現有AI伺服器需求爆發規則邏輯不同'
       evidence_source: qualitative
+  - event: 低階標準品被動元件低基期補漲潮
+    keywords:
+      - 標準品
+      - 低階被動元件
+      - 低基期
+      - 電阻漲三成
+      - DDR4式補漲
+    impact:
+      direction: bullish
+      description: 低階標準品被動元件因成本上漲啟動漲價且阻力小，帶動相關台廠毛利率改善幅度超預期
+      sectors:
+        - passive_components
+      stocks:
+        passive_components:
+          - '2327'
+          - '2492'
+          - '2472'
+      last_updated_reason: '2026-06-08: EP661明確指出低階標準品被動元件價格基期低、需求廣泛，類比DDR4漲幅超越DDR5的歷史規律；EP662補充電阻已成功漲三成，低基期標準品的補漲機制與現有規則庫中的高階缺貨敘事不同，為獨立的低基期追價邏輯'
+      evidence_source: qualitative
+  - event: Trump海關強化反規避稽查令衝擊第三地供應鏈
+    keywords:
+      - 海關稽查
+      - 關稅規避
+      - 第三地轉運
+      - 行政令
+      - tariff cheats
+      - customs crackdown
+    impact:
+      direction: bearish
+      description: 美海關執法強化使借助第三地規避關稅的供應鏈面臨補稅與通關延誤風險，衝擊OEM/ODM廠商海外廠獲利穩定性
+      sectors:
+        - EMS_ODM
+      stocks:
+        EMS_ODM:
+          - '2317'
+          - '4938'
+      last_updated_reason: '2026-06-08: Bloomberg、Business Times、Baker Botts等多源證實Trump簽署行政令強化海關對關稅規避行為稽查，專門鎖定透過第三國轉運規避美關稅的進口商，直接衝擊台廠在越南/泰國等地的迂迴出口模式，現有規則庫僅涵蓋關稅稅率談判層面，未涵蓋海關執法強化的合規補稅風險'
+      evidence_source: qualitative
