@@ -15,7 +15,7 @@
       - "中東"
     horizon: event
     impact:
-      direction: "bullish" # 對特定板塊為利多
+      direction: "mixed"   # 對特定板塊為利多
       description: "中東地區的軍事衝突通常會刺激全球的國防、石油和黃金市場。"
       sectors: ["defense", "shipping", "oil", "gold"]
       stocks:
@@ -32,7 +32,7 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-05: 累積達標率 83%（6 筆），調整信心門檻 0.40 → 0.30'
+      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（6/6 筆）'
       evidence_source: quant
     min_confidence: 0.3
   - event: "美國對中半導體禁令"
@@ -710,7 +710,7 @@
       - 太空運算
     horizon: event
     impact:
-      direction: bullish
+      direction: mixed
       description: SpaceX IPO卡位太空運算第一棒，帶動軌道衛星AI伺服器供應鏈（散熱、太陽能板）進入本夢比估值重塑期
       sectors:
         - 散熱模組
@@ -720,8 +720,8 @@
         散熱模組:
           - '3324'
           - '3017'
-      last_updated_reason: '2026-05-27: EP665明確指出SpaceX高機率成為新Neo Cloud概念股，供應鏈已見蛛絲馬跡；衛星搭載AI伺服器具無限能源優勢，散熱片與太陽能板需求巨大，形成有別於地面資料中心的全新算力投資主題，現有規則庫未涵蓋此太空軌道算力脈絡'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: 鉭電容爭議金屬退場加速MLCC結構替代
     keywords:
       - 鉭電容
@@ -754,7 +754,7 @@
       - 文曄
     horizon: trend
     impact:
-      direction: bullish
+      direction: mixed
       description: 被動元件現貨短缺時，通路商現貨庫存跟隨漲價，庫存評價與毛利雙升，形成有別於製造端的第二波漲價受益
       sectors:
         - passive_component_distribution
@@ -762,8 +762,8 @@
         passive_component_distribution:
           - '3702'
           - '3036'
-      last_updated_reason: '2026-05-27: 股癌EP664明確點名通路商與MLCC/鋁電容/電感/電阻製造商同列漲停，現有規則庫僅涵蓋製造端漲價，未涵蓋通路商因持有現貨庫存在短缺期間同步增值的獨立獲利機制'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（4/4 筆）'
+      evidence_source: quant
   - event: 光通休息資金輪動回ODM/EMS接棒
     keywords:
       - 資金輪動
