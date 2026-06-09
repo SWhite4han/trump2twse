@@ -1036,3 +1036,49 @@
           - '4938'
       last_updated_reason: '2026-06-08: Bloomberg、Business Times、Baker Botts等多源證實Trump簽署行政令強化海關對關稅規避行為稽查，專門鎖定透過第三國轉運規避美關稅的進口商，直接衝擊台廠在越南/泰國等地的迂迴出口模式，現有規則庫僅涵蓋關稅稅率談判層面，未涵蓋海關執法強化的合規補稅風險'
       evidence_source: qualitative
+  - event: NV Power Rack百倍ASP升格重塑散熱電源供應鏈
+    keywords:
+      - Power Rack
+      - 百倍ASP
+      - NV Enterprise
+      - Computex
+      - 散熱
+      - 電源模組
+    impact:
+      direction: bullish
+      description: 億元級Power Rack帶動液冷散熱、高功率電源模組、高階PCB廠ASP與毛利率雙升，觸發供應鏈全面重估
+      sectors:
+        - AI伺服器散熱
+        - 電源供應
+        - 伺服器ODM
+      stocks:
+        AI伺服器散熱:
+          - '3324'
+          - '3017'
+        伺服器ODM:
+          - '2382'
+          - '2356'
+      last_updated_reason: '2026-06-09: Computex現場確認Power Rack體積大5倍、ASP為舊款100倍，為全新產品規格層級，現有規則只追蹤AI伺服器需求量，未涵蓋單價結構性巨幅升格對散熱/電源模組/PCB供應鏈ASP與毛利率的重估效應'
+      evidence_source: qualitative
+  - event: Agentic AI驅動CPU整機Rack新品類需求
+    keywords:
+      - Agentic AI
+      - CPU Rack
+      - Whole Rack
+      - workflow
+      - Computex
+    impact:
+      direction: bullish
+      description: Agentic AI工作流帶動CPU整機Rack出貨放量，擴大伺服器ODM出貨規模並帶動CPU散熱需求
+      sectors:
+        - 伺服器ODM
+        - CPU散熱
+        - AI基礎設施
+      stocks:
+        伺服器ODM:
+          - '2382'
+          - '3231'
+          - '2356'
+      last_updated_reason: '2026-06-09: Computex確認NVIDIA推出CPU Whole Rack專供Agentic
+        AI workflow，為GPU主導AI伺服器以外的全新產品品類需求，現有規則未涵蓋此CPU整機Rack出貨結構'
+      evidence_source: qualitative
