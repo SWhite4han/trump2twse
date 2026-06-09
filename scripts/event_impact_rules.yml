@@ -32,9 +32,9 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（6/6 筆）'
+      last_updated_reason: '2026-06-09: 累積達標率 38%（13 筆），調整信心門檻 0.30 → 0.50'
       evidence_source: quant
-    min_confidence: 0.3
+    min_confidence: 0.5
   - event: "美國對中半導體禁令"
     keywords:
       - "chip ban"
@@ -720,8 +720,9 @@
         散熱模組:
           - '3324'
           - '3017'
-      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（2/2 筆）'
+      last_updated_reason: '2026-06-09: 累積達標率 17%（1/6 筆），低於 25% 閾值'
       evidence_source: quant
+    disabled: true
   - event: 鉭電容爭議金屬退場加速MLCC結構替代
     keywords:
       - 鉭電容
