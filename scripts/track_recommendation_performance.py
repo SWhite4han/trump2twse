@@ -12,10 +12,11 @@
   7. 依結案績效產生規則更新建議
 
 收盤原因（close_reason）：
-  triggered_target  觸達目標價
-  triggered_stop    觸達停損價
-  superseded        相同股票出現新推薦（覆蓋）
-  expired           MAX_WATCH_DAYS 天內未進場
+  triggered_target   觸達目標價
+  triggered_stop     觸達停損價
+  superseded         相同股票出現新推薦（覆蓋）
+  expired            MAX_WATCH_DAYS 天內未進場
+  expired_validity   LLM 推薦的 validity_days 已到，仍未進場
 """
 from __future__ import annotations
 
@@ -31,11 +32,16 @@ from scripts.lib.twse_client import get_prices
 MAX_WATCH_DAYS    = 10       # 未進場的最長觀察天數
 CAPITAL_PER_TRADE = 100_000  # 每筆模擬資金
 
+# 時間視野對應預設值（與 daily_pipeline._HORIZON_DEFAULT_VALIDITY 對齊）
+HORIZON_DEFAULT_MAX_HOLDING = {"event": 30, "trend": 90, "cycle": 180}
+HORIZON_DEFAULT_VALIDITY    = {"event": 5,  "trend": 7,  "cycle": 10}
+
 CLOSE_REASON_LABEL = {
-    "triggered_target": "✅ 觸達目標",
-    "triggered_stop":   "❌ 觸達停損",
-    "superseded":       "🔄 新推薦覆蓋",
-    "expired":          "⏰ 逾期未進場",
+    "triggered_target":  "✅ 觸達目標",
+    "triggered_stop":    "❌ 觸達停損",
+    "superseded":        "🔄 新推薦覆蓋",
+    "expired":           "⏰ 逾期未進場",
+    "expired_validity":  "⌛ 推薦失效",
 }
 
 OPEN_POSITIONS_FILE = lambda: config.data_dir / "performance" / "open_positions.json"
@@ -122,6 +128,9 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
 
     # 1. 載入持倉與新推薦
     open_pos        = _load_open_positions()
+    if _backfill_horizon_validity(open_pos):
+        _save_open_positions(open_pos)
+        print(f"[perf] open_positions backfill 完成（horizon/validity 欄位）")
     new_recs        = _load_recommendations(report_date)
     position_updates = _load_position_updates(report_date)
 
@@ -158,12 +167,20 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
                     print(f"[perf] 拒絕無效 stop 更新 {pos['code']}："
                           f"new_stop={new_stop} 與進場區間倒掛，保留原值 {pos['stop_loss']}")
 
-        # 逾期未進場
+        # 逾期未進場：validity_days 與 MAX_WATCH_DAYS 取較小者
         pos["days_watched"] = pos.get("days_watched", 0) + 1
-        if pos["days_watched"] > MAX_WATCH_DAYS and pos.get("state") == "watching":
-            _close(pos, "expired", price, today)
-            closed.append(pos)
-            continue
+        if pos.get("state") == "watching":
+            v_days = pos.get("validity_days")
+            try:
+                v_days = int(v_days) if v_days is not None else MAX_WATCH_DAYS
+            except (TypeError, ValueError):
+                v_days = MAX_WATCH_DAYS
+            limit = min(MAX_WATCH_DAYS, v_days)
+            if pos["days_watched"] > limit:
+                reason = "expired_validity" if v_days < MAX_WATCH_DAYS else "expired"
+                _close(pos, reason, price, today)
+                closed.append(pos)
+                continue
 
         # 持倉超過時間視野上限（holding 專用）
         if pos.get("state") == "holding" and pos.get("entry_date"):
@@ -201,6 +218,7 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             continue  # 無進場區間無法追蹤
 
         price = prices.get(rec["code"])
+        h = rec.get("horizon", "trend")
         pos = {
             "code":               rec["code"],
             "name":               rec.get("name", ""),
@@ -212,8 +230,10 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
             "stop_loss":          rec.get("stop_loss"),
             "report_date":        report_date,
             "confidence":         rec.get("confidence"),
-            "horizon":            rec.get("horizon", "trend"),
-            "max_holding_days":   rec.get("max_holding_days", 90),
+            "horizon":            h,
+            "max_holding_days":   rec.get("max_holding_days") or HORIZON_DEFAULT_MAX_HOLDING.get(h, 90),
+            "validity_days":      rec.get("validity_days") or HORIZON_DEFAULT_VALIDITY.get(h, 7),
+            "valid_until":        rec.get("valid_until"),
             "state":              "watching",
             "entry_date":         None,
             "actual_entry_price": None,
@@ -258,6 +278,48 @@ def _load_open_positions() -> list[dict]:
         return []
     with open(f, encoding="utf-8") as fp:
         return json.load(fp)
+
+
+def _load_rules_horizon_map() -> dict[str, str]:
+    """rule_id → horizon。讀失敗回傳 {}。"""
+    try:
+        from ruamel.yaml import YAML as _YAML
+        with open(config.rules_file, encoding="utf-8") as f:
+            rules = _YAML().load(f) or []
+        return {r["event"]: r.get("horizon", "trend") for r in rules if "event" in r}
+    except Exception:
+        return {}
+
+
+def _backfill_horizon_validity(positions: list[dict]) -> bool:
+    """為缺欄位的部位補上 horizon / max_holding_days / validity_days / valid_until。
+
+    來源：rule YAML 反查 horizon，再依 horizon 推 max_holding_days 與 validity_days。
+    valid_until = report_date + validity_days。
+
+    回傳是否有變動（外部決定要不要寫回檔）。
+    """
+    if not positions:
+        return False
+    horizon_map = _load_rules_horizon_map()
+    changed = False
+    for p in positions:
+        h = p.get("horizon")
+        if not h:
+            h = horizon_map.get(p.get("rule_id", ""), "trend")
+            p["horizon"] = h
+            changed = True
+        if not p.get("max_holding_days"):
+            p["max_holding_days"] = HORIZON_DEFAULT_MAX_HOLDING.get(h, 90)
+            changed = True
+        if not p.get("validity_days"):
+            p["validity_days"] = HORIZON_DEFAULT_VALIDITY.get(h, 7)
+            changed = True
+        if not p.get("valid_until") and p.get("report_date"):
+            from scripts.daily_pipeline import _compute_valid_until
+            p["valid_until"] = _compute_valid_until(p["report_date"], p["validity_days"])
+            changed = True
+    return changed
 
 
 def _save_open_positions(positions: list[dict]) -> None:
@@ -328,6 +390,7 @@ DEFAULT_FIELDNAMES = [
     "close_reason", "close_date",
     "pnl_pct", "pnl_twd", "days_watched", "confidence",
     "horizon", "max_holding_days",
+    "validity_days", "valid_until",
 ]
 
 
@@ -340,26 +403,41 @@ def _save_csv(closed: list[dict]) -> None:
     csv_file  = perf_dir / f"{month}.csv"
 
     # 讀取已存在的 header（保持 schema 一致），同時收集已有 (report_date, code) 集合
+    existing_rows: list[dict] = []
     existing_keys: set[tuple] = set()
+    existing_fields: list[str] = []
     if csv_file.exists():
         with open(csv_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            fieldnames = reader.fieldnames or DEFAULT_FIELDNAMES
+            existing_fields = list(reader.fieldnames or [])
             for row in reader:
+                existing_rows.append(row)
                 existing_keys.add((row["report_date"], row["code"]))
-    else:
-        fieldnames = DEFAULT_FIELDNAMES
 
     new_rows = [r for r in closed if (r.get("report_date"), r.get("code")) not in existing_keys]
     if not new_rows:
         return
 
-    write_header = not csv_file.exists()
-    with open(csv_file, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
-        if write_header:
+    # 聯集 fieldnames：DEFAULT 為基底，加上既有 CSV 額外欄位，再加新 row 額外欄位
+    fieldnames = list(DEFAULT_FIELDNAMES)
+    for extra in existing_fields + [k for r in new_rows for k in r.keys()]:
+        if extra not in fieldnames:
+            fieldnames.append(extra)
+
+    needs_rewrite = existing_rows and existing_fields != fieldnames
+    if needs_rewrite:
+        with open(csv_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
-        writer.writerows(new_rows)
+            writer.writerows(existing_rows)
+            writer.writerows(new_rows)
+    else:
+        write_header = not csv_file.exists()
+        with open(csv_file, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            if write_header:
+                writer.writeheader()
+            writer.writerows(new_rows)
     print(f"[perf] {len(new_rows)} 筆結案 → {csv_file}")
 
 

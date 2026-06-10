@@ -25,7 +25,7 @@ import json
 import re
 import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # 讓本檔可從專案根執行
@@ -40,15 +40,37 @@ from scripts.lib.twse_client import get_prices, format_price_line, get_yf_ticker
 # 價格帶預設值（Step 4 初始設定 / Step 4.5 後處理截斷）
 _ENTRY_LOW_FACTOR  = 0.97   # entry_low  = close × 0.97
 _ENTRY_HIGH_FACTOR = 1.00   # entry_high = close × 1.00
-_TARGET_FACTOR     = 1.15   # target     = close × 1.15（+15%，報酬空間才值得承擔風險）
-_STOP_FACTOR       = 0.92   # stop_loss  = close × 0.92（-8%，真正代表論點失效而非普通波動）
+_TARGET_FACTOR_BUY  = 1.15  # 觀察買進 target = close × 1.15（+15%）
+_TARGET_FACTOR_SELL = 0.85  # 觀察賣出 target = close × 0.85（-15%，做空目標在下方）
+_STOP_FACTOR_BUY    = 0.92  # 觀察買進 stop  = close × 0.92（-8%）
+_STOP_FACTOR_SELL   = 1.08  # 觀察賣出 stop  = close × 1.08（+8%，做空停損在上方）
 _TA_ENTRY_FLOOR    = 0.95   # TA 後處理：進場價下緣截斷
 _TA_ENTRY_CEIL     = 1.10   # TA 後處理：進場價上緣截斷
+
+# 推薦有效期間預設值（依時間視野）：天數 = 觀察窗口失效前的日曆天
+_HORIZON_DEFAULT_VALIDITY = {"event": 5, "trend": 7, "cycle": 10}
+
+# 過熱濾鏡：近 3 日漲幅超過此值的買進、或跌幅超過此值的賣出，視為追高/追空而剔除
+_OVERHEAT_GAIN_THRESHOLD = 0.15
+# 連續推薦去重：近 N 日 daily_report 內已出現過的 (rule_id, code) 視為重複而剔除
+_DEDUP_LOOKBACK_DAYS = 5
 
 
 # --------------------------------------------------------------------------- #
 # 共用工具
 # --------------------------------------------------------------------------- #
+
+def _compute_valid_until(report_date: str, validity_days: int) -> str:
+    """report_date (YYYYMMDD) + validity_days 日曆天 → YYYYMMDD 字串。"""
+    try:
+        dt = datetime.strptime(report_date, "%Y%m%d")
+    except (TypeError, ValueError):
+        try:
+            dt = datetime.strptime(report_date, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            return ""
+    return (dt + timedelta(days=int(validity_days))).strftime("%Y%m%d")
+
 
 def _parse_llm_json_array(raw: str) -> list:
     """從 LLM 回傳字串中提取第一個 JSON 陣列。
@@ -129,7 +151,13 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     recommendations = _step_enrich_prices(recommendations)
 
     # ── Step 6/10：技術面分析（yfinance MA/RSI + batch LLM）─────────
-    recommendations = _step_enrich_ta(recommendations)
+    recommendations = _step_enrich_ta(recommendations, report_date=today_compact)
+
+    # ── Step 6.5/10：過熱濾鏡（近 3 日漲跌幅）───────────────────────
+    recommendations = _step_overheat_filter(recommendations)
+
+    # ── Step 6.6/10：近 N 日重複推薦去重 ────────────────────────────
+    recommendations = _step_dedup_recent(recommendations, today_compact)
 
     # ── Step 7/10（前）：投資組合決策（持倉感知）───────────────────
     open_positions = _load_open_positions()
@@ -472,11 +500,12 @@ def _step_enrich_prices(recs: list[dict]) -> list[dict]:
                 rec["name"] = info.get("name", rec["code"])
                 close = info.get("close")
                 if close:
+                    is_sell = rec.get("action") == "觀察賣出"
                     rec["last_close"] = close
                     rec["entry_low"]  = round(close * _ENTRY_LOW_FACTOR,  1)
                     rec["entry_high"] = round(close * _ENTRY_HIGH_FACTOR, 1)
-                    rec["target"]     = round(close * _TARGET_FACTOR,     1)
-                    rec["stop_loss"]  = round(close * _STOP_FACTOR,       1)
+                    rec["target"]     = round(close * (_TARGET_FACTOR_SELL if is_sell else _TARGET_FACTOR_BUY), 1)
+                    rec["stop_loss"]  = round(close * (_STOP_FACTOR_SELL   if is_sell else _STOP_FACTOR_BUY),   1)
     except Exception as e:
         print(f"       TWSE 股價查詢失敗（繼續）：{e}")
 
@@ -517,10 +546,22 @@ def _compute_ta(hist, current_close: float | None = None) -> dict:
     else:
         rsi = 100.0
 
+    # 近 3 個交易日漲跌幅（供過熱濾鏡判斷追高/追空）
+    gain_3d = None
+    if len(close) >= 4:
+        try:
+            prev = float(close.iloc[-4])
+            cur  = float(close.iloc[-1])
+            if prev > 0:
+                gain_3d = round((cur - prev) / prev, 4)
+        except Exception:
+            pass
+
     return {
         "close": current_close or r(close.iloc[-1]),
         "ma5": ma5, "ma20": ma20, "ma60": ma60,
         "high20": high20, "low20": low20, "rsi": rsi,
+        "gain_3d": gain_3d,
     }
 
 
@@ -538,7 +579,9 @@ def _fetch_ta_data(recs: list[dict], yf) -> dict[str, dict]:
             ticker = yf.Ticker(yf_sym)
             h = ticker.history(period="3mo", auto_adjust=True)
             if not h.empty and len(h) >= 20:
-                ta_map[code] = _compute_ta(h, rec.get("last_close"))
+                ta = _compute_ta(h, rec.get("last_close"))
+                ta_map[code] = ta
+                rec["gain_3d"] = ta.get("gain_3d")
                 if not rec.get("name"):
                     info = ticker.info
                     yf_name = info.get("shortName") or info.get("longName") or ""
@@ -571,9 +614,12 @@ def _build_ta_prompt(recs: list[dict], ta_map: dict[str, dict]) -> tuple[str, li
     prompt = (
         "以下是今日推薦股票的技術面資料，請根據操作方向給出進場區間、目標、停損與一句中文理由。\n\n"
         + "\n".join(rows)
-        + "\n\n原則（自行判斷，不需死守）：\n"
+        + "\n\n【方向硬性規則 — 違反會被系統駁回】：\n"
+        "- 觀察買進：target > entry_high（目標在進場價上方），stop_loss < entry_low（停損在進場價下方）\n"
+        "- 觀察賣出：target < entry_low（目標在進場價下方），stop_loss > entry_high（停損在進場價上方）\n\n"
+        "原則（自行判斷，不需死守）：\n"
         "- 觀察買進：進場接近 MA20 支撐，目標近20日高點，停損 MA60 下方\n"
-        "- 觀察賣出：提供合理減碼價位，停損設在近期壓力上方\n"
+        "- 觀察賣出：進場接近近期壓力減碼，目標近20日低點，停損近期壓力上方\n"
         "- 停看等：提供關鍵支撐/壓力區間作為參考\n\n"
         "視野說明（請根據各股的視野欄位，設定符合該時間框架的 entry/target/stop_loss）：\n"
         "- event（事件驅動，30天）：停損 -8~12%，目標 +15~20%，以近期催化劑消化為退場依據\n"
@@ -582,19 +628,28 @@ def _build_ta_prompt(recs: list[dict], ta_map: dict[str, dict]) -> tuple[str, li
         "【重要限制】台股每日漲跌幅 ±10%，進場區間（entry_low / entry_high）必須在現價的 95%～110% 以內。"
         "若 MA20 遠低於現價（股票過熱），entry 仍需設在現價 -5% 以內的可執行區間，"
         "並在 reason 中說明需等回測，不可直接寫出遙不可及的 MA20 價位。\n\n"
+        "validity_days：進場區間的有效天數（日曆天），超過此區間視訊號失效。建議：\n"
+        "- event 視野：3~5 天（催化劑消化快）\n"
+        "- trend 視野：5~8 天\n"
+        "- cycle 視野：7~10 天（給足建倉時間）\n"
+        "若進場價貼近現價可給較短天數，若需等回測支撐可給較長天數，上限 10 天。\n\n"
         "只輸出 JSON 陣列，不要其他說明文字：\n"
-        '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"reason":"一句話"}]'
+        '[{"code":"XXXX","entry_low":X,"entry_high":Y,"target":Z,"stop_loss":W,"validity_days":N,"reason":"一句話"}]'
     )
     return prompt, valid_codes
 
 
 def _apply_ta_results(recs: list[dict], items: list[dict]) -> dict:
-    """將 LLM 回傳的 TA 結果套用到 recs（in-place），並硬截斷進場價邊界。回傳 {code: item}。"""
+    """將 LLM 回傳的 TA 結果套用到 recs（in-place），並硬截斷進場價邊界。回傳 {code: item}。
+
+    方向驗證：若 LLM 回傳的 target/stop 與 action 方向不一致（例如觀察賣出卻給買進方向的
+    target/stop），則回退到 Step 5 的方向感知預設值，避免錯誤建議流出。
+    """
     ta_result = {item["code"]: item for item in items if "code" in item}
     for rec in recs:
         item = ta_result.get(rec["code"])
         if item:
-            for key in ("entry_low", "entry_high", "target", "stop_loss", "reason"):
+            for key in ("entry_low", "entry_high", "target", "stop_loss", "reason", "validity_days"):
                 if item.get(key) is not None:
                     rec[key] = item[key]
         close = rec.get("last_close")
@@ -605,10 +660,44 @@ def _apply_ta_results(recs: list[dict], items: list[dict]) -> dict:
                 rec["entry_low"]  = max(floor, min(ceil, rec["entry_low"]))
             if rec.get("entry_high") is not None:
                 rec["entry_high"] = max(floor, min(ceil, rec["entry_high"]))
+        _enforce_direction(rec)
     return ta_result
 
 
-def _step_enrich_ta(recs: list[dict]) -> list[dict]:
+def _enforce_direction(rec: dict) -> None:
+    """驗證 target/stop 方向與 action 一致；不一致則回退到 close 為基準的方向感知預設值。"""
+    action = rec.get("action")
+    close  = rec.get("last_close")
+    entry_low  = rec.get("entry_low")
+    entry_high = rec.get("entry_high")
+    target = rec.get("target")
+    stop   = rec.get("stop_loss")
+    if not close or entry_low is None or entry_high is None or target is None or stop is None:
+        return
+
+    is_sell = action == "觀察賣出"
+    is_buy  = action == "觀察買進"
+    if not (is_sell or is_buy):
+        return  # 停看等不需要方向驗證
+
+    if is_buy:
+        ok = target > entry_high and stop < entry_low
+    else:
+        ok = target < entry_low and stop > entry_high
+
+    if ok:
+        return
+
+    new_target = round(close * (_TARGET_FACTOR_SELL if is_sell else _TARGET_FACTOR_BUY), 1)
+    new_stop   = round(close * (_STOP_FACTOR_SELL   if is_sell else _STOP_FACTOR_BUY),   1)
+    print(f"       [警告] {rec.get('code')} {action} target/stop 方向不一致 "
+          f"(target={target} stop={stop} entry={entry_low}~{entry_high})，回退預設值 "
+          f"target={new_target} stop={new_stop}")
+    rec["target"]    = new_target
+    rec["stop_loss"] = new_stop
+
+
+def _step_enrich_ta(recs: list[dict], report_date: str | None = None) -> list[dict]:
     """yfinance 拉歷史 OHLCV → 計算 TA → 一次 LLM call → 覆寫 entry/target/stop/reason。"""
     if not recs:
         return recs
@@ -618,15 +707,18 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         import yfinance as yf
     except ImportError:
         print("       yfinance 未安裝，略過。")
+        _finalize_validity(recs, report_date)
         return recs
 
     ta_map = _fetch_ta_data(recs, yf)
     if not ta_map:
         print("       TA 資料全部失敗，使用 ±3/5% 預設值")
+        _finalize_validity(recs, report_date)
         return recs
 
     prompt, valid_codes = _build_ta_prompt(recs, ta_map)
     if not valid_codes:
+        _finalize_validity(recs, report_date)
         return recs
 
     try:
@@ -635,13 +727,103 @@ def _step_enrich_ta(recs: list[dict]) -> list[dict]:
         items = _parse_llm_json_array(raw)
         if not items:
             print("       TA LLM 未回傳 JSON，使用預設值")
-            return recs
-        ta_result = _apply_ta_results(recs, items)
-        print(f"       TA 完成，{len(ta_result)} 支股票已更新進出場價")
+        else:
+            ta_result = _apply_ta_results(recs, items)
+            print(f"       TA 完成，{len(ta_result)} 支股票已更新進出場價")
     except Exception as e:
         print(f"       TA LLM 失敗（使用 ±3/5% 預設值）：{e}")
 
+    _finalize_validity(recs, report_date)
     return recs
+
+
+def _finalize_validity(recs: list[dict], report_date: str | None = None) -> None:
+    """補齊 validity_days（缺則依 horizon 預設）並計算 valid_until。in-place 改 recs。"""
+    today_compact = report_date or datetime.now().strftime("%Y%m%d")
+    for rec in recs:
+        horizon = rec.get("horizon", "trend")
+        default = _HORIZON_DEFAULT_VALIDITY.get(horizon, 7)
+        try:
+            v = int(rec.get("validity_days") or default)
+        except (TypeError, ValueError):
+            v = default
+        # 上限以 MAX_WATCH_DAYS 為硬界線（避免 LLM 給出脫離追蹤能力的天數）
+        v = max(1, min(v, 14))
+        rec["validity_days"] = v
+        rec["valid_until"]   = _compute_valid_until(today_compact, v)
+
+
+# --------------------------------------------------------------------------- #
+# Step 4.6：過熱濾鏡（近 3 日漲跌幅檢查）
+# --------------------------------------------------------------------------- #
+
+def _step_overheat_filter(recs: list[dict]) -> list[dict]:
+    """剔除近 3 日漲幅過大的觀察買進、跌幅過大的觀察賣出（追高/追空保護）。"""
+    if not recs:
+        return recs
+    print(f"[6.5/10] 過熱濾鏡（近 3 日 |漲跌| > {_OVERHEAT_GAIN_THRESHOLD*100:.0f}%）…")
+    kept: list[dict] = []
+    dropped: list[tuple[dict, float, str]] = []
+    for r in recs:
+        gain = r.get("gain_3d")
+        action = r.get("action", "")
+        if gain is None:
+            kept.append(r)
+            continue
+        if "買進" in action and gain > _OVERHEAT_GAIN_THRESHOLD:
+            dropped.append((r, gain, "買進追高"))
+        elif "賣出" in action and gain < -_OVERHEAT_GAIN_THRESHOLD:
+            dropped.append((r, gain, "賣出追空"))
+        else:
+            kept.append(r)
+    for r, g, why in dropped:
+        print(f"       ✂️  {r.get('code')} {r.get('name','')} 近3日 {g*100:+.1f}% — {why}")
+    print(f"       保留 {len(kept)} / {len(recs)} 筆")
+    return kept
+
+
+# --------------------------------------------------------------------------- #
+# Step 4.6.5：近 N 日重複推薦去重
+# --------------------------------------------------------------------------- #
+
+def _step_dedup_recent(recs: list[dict], today_compact: str) -> list[dict]:
+    """剔除近 N 日 daily_report 已出現過的 (rule_id, code) 組合。"""
+    if not recs:
+        return recs
+    print(f"[6.6/10] 近 {_DEDUP_LOOKBACK_DAYS} 日重複推薦去重…")
+    reports_dir = config.data_dir / "reports"
+    try:
+        today_dt = datetime.strptime(today_compact, "%Y%m%d")
+    except ValueError:
+        print("       today_compact 解析失敗，略過去重")
+        return recs
+    seen: set[tuple[str, str]] = set()
+    for offset in range(1, _DEDUP_LOOKBACK_DAYS + 1):
+        d = (today_dt - timedelta(days=offset)).strftime("%Y%m%d")
+        path = reports_dir / f"daily_report_{d}.json"
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for old in data.get("recommendations", []):
+            rid = old.get("rule_id")
+            code = old.get("code")
+            if rid and code:
+                seen.add((rid, code))
+    kept: list[dict] = []
+    dropped: list[dict] = []
+    for r in recs:
+        key = (r.get("rule_id"), r.get("code"))
+        if key[0] and key[1] and key in seen:
+            dropped.append(r)
+        else:
+            kept.append(r)
+    for r in dropped:
+        print(f"       ✂️  {r.get('code')} {r.get('name','')} — {r.get('rule_id','')[:24]} 近 {_DEDUP_LOOKBACK_DAYS} 日已推過")
+    print(f"       保留 {len(kept)} / {len(recs)} 筆")
+    return kept
 
 
 # --------------------------------------------------------------------------- #

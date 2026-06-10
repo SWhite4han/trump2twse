@@ -16,6 +16,7 @@ from scripts.track_recommendation_performance import MAX_WATCH_DAYS
 
 CAPITAL_PER_TRADE = 100_000  # 每筆假設投入 10 萬
 BASELINE_DATE     = "20260514"  # TA+LLM 系統正式上線日，之前資料不計入績效基準
+V2_BASELINE_DATE  = "20260609"  # v2 改版起算日（market_filter NaN 防護 + trump_twitter Google News fix 之後）
 
 PERF_STATUS_EMOJI = {
     "triggered_target": "✅ 達標",
@@ -23,7 +24,12 @@ PERF_STATUS_EMOJI = {
     "triggered_hold":   "⏳ 持有",
     "not_triggered":    "⬜ 未觸發",
     "no_data":          "➖ 無資料",
+    "expired":          "⏰ 逾期",
+    "expired_validity": "⌛ 推薦失效",
+    "superseded":       "🔄 覆蓋",
 }
+
+HORIZON_LABEL = {"event": "🎯 事件", "trend": "📈 趨勢", "cycle": "🌊 循環"}
 
 
 def run(date_str: str | None = None) -> None:
@@ -62,6 +68,23 @@ def _load_all_csv() -> list[dict]:
         with open(f, encoding="utf-8", newline="") as fp:
             rows.extend(csv.DictReader(fp))
     return rows
+
+
+def _rules_horizon_map() -> dict[str, str]:
+    """rule_id → horizon。失敗回傳 {}。供舊資料反查 horizon 用。"""
+    try:
+        from scripts.auto_update_rules import _load_rules as _lr
+        return {r["event"]: r.get("horizon", "trend") for r in _lr() if "event" in r}
+    except Exception:
+        return {}
+
+
+def _resolve_horizon(rec: dict, horizon_map: dict[str, str]) -> str:
+    """回傳 rec 的 horizon；缺則查規則 YAML；都查不到回 trend。"""
+    h = rec.get("horizon")
+    if h:
+        return h
+    return horizon_map.get(rec.get("rule_id", ""), "trend")
 
 
 def _load_open_positions() -> list[dict]:
@@ -139,6 +162,8 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
     stats_all      = _compute_stats(rows)
     baseline_rows  = [r for r in rows if r.get("report_date", "") >= BASELINE_DATE]
     stats_baseline = _compute_stats(baseline_rows)
+    v2_rows        = [r for r in rows if r.get("report_date", "") >= V2_BASELINE_DATE]
+    stats_v2       = _compute_stats(v2_rows)
 
     lines: list[str] = [
         "# Performance Report",
@@ -164,10 +189,42 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
         "|---|---|",
         *_fmt_stats_rows(stats_baseline),
         "",
+        f"### v2 期績效（≥{V2_BASELINE_DATE}，最新一輪改版後）",
+        "",
+        "| 項目 | 數值 |",
+        "|---|---|",
+        *_fmt_stats_rows(stats_v2),
+        "",
     ]
 
-    # 各規則勝率（只統計有進出場的交易）
+    # 各視野績效（依 horizon 分組，缺則查 rule YAML）
+    horizon_map = _rules_horizon_map()
     closed_rows = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
+    by_horizon: dict[str, list[dict]] = defaultdict(list)
+    for r in closed_rows:
+        by_horizon[_resolve_horizon(r, horizon_map)].append(r)
+
+    if by_horizon:
+        lines += [
+            "## 各視野績效",
+            "",
+            "| 視野 | 筆數 | 達標率 | 停損率 | PF | 平均損益 |",
+            "|---|---|---|---|---|---|",
+        ]
+        for h_key in ("event", "trend", "cycle"):
+            recs = by_horizon.get(h_key, [])
+            if not recs:
+                continue
+            s = _compute_stats(recs)
+            n = s["closed"]
+            hit  = f"{s['target_hits']/n*100:.0f}%" if n else "—"
+            stop = f"{s['stop_hits']/n*100:.0f}%"   if n else "—"
+            pf   = f"{s['profit_factor']:.2f}"     if s["profit_factor"] is not None else "—"
+            avg  = f"{s['avg_pct']:+.1f}%"         if s["avg_pct"]       is not None else "—"
+            lines.append(f"| {HORIZON_LABEL.get(h_key, h_key)} | {n} | {hit} | {stop} | {pf} | {avg} |")
+        lines.append("")
+
+    # 各規則勝率（只統計有進出場的交易）
     by_rule: dict[str, list[dict]] = defaultdict(list)
     for r in closed_rows:
         by_rule[r.get("rule_id", "未知")].append(r)
@@ -244,12 +301,13 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
 
     if holding or watching:
         lines += ["## 目前持倉", ""]
+        today_dt = datetime.now()
         if holding:
             lines += [
                 f"### 已進場（{len(holding)} 筆）",
                 "",
-                "| 股票 | 規則 | 進場日 | 進場價 | 目標 | 停損 | 現價 | 浮動損益 |",
-                "|---|---|---|---|---|---|---|---|",
+                "| 股票 | 規則 | 視野 | 進場日 | 進場價 | 目標 | 停損 | 現價 | 浮動損益 | 已持/上限 |",
+                "|---|---|---|---|---|---|---|---|---|---|",
             ]
             for p in holding:
                 lc = p.get("last_close")
@@ -262,34 +320,52 @@ def _build_markdown(rows: list[dict], open_pos: list[dict]) -> str:
                     pnl = f"{raw * 100:+.1f}%"
                 except (TypeError, ZeroDivisionError):
                     pnl = "—"
+                h = _resolve_horizon(p, horizon_map)
+                max_hold = p.get("max_holding_days") or {"event": 30, "trend": 90, "cycle": 180}.get(h, 90)
+                days_held = "—"
+                if p.get("entry_date"):
+                    try:
+                        days_held = (today_dt - datetime.strptime(p["entry_date"], "%Y%m%d")).days
+                    except ValueError:
+                        pass
                 lines.append(
                     f"| {p['code']} {p.get('name','')} "
                     f"| {p.get('rule_id','')} "
+                    f"| {HORIZON_LABEL.get(h, h)} "
                     f"| {p.get('entry_date','—')} "
                     f"| {ep_str} "
                     f"| {p.get('target','—')} "
                     f"| {p.get('stop_loss','—')} "
                     f"| {lc_str} "
-                    f"| {pnl} |"
+                    f"| {pnl} "
+                    f"| {days_held}/{max_hold} |"
                 )
             lines.append("")
         if watching:
             lines += [
                 f"### 觀察中－等待進場（{len(watching)} 筆）",
                 "",
-                "| 股票 | 規則 | 推薦日 | 進場區間 | 目標 | 停損 | 觀察天數 |",
-                "|---|---|---|---|---|---|---|",
+                "| 股票 | 規則 | 視野 | 推薦日 | 進場區間 | 目標 | 停損 | 觀察天數 |",
+                "|---|---|---|---|---|---|---|---|",
             ]
             for p in watching:
                 entry = f"{p.get('entry_low','—')}–{p.get('entry_high','—')}"
+                h = _resolve_horizon(p, horizon_map)
+                v_days = p.get("validity_days") or MAX_WATCH_DAYS
+                try:
+                    v_days = int(v_days)
+                except (TypeError, ValueError):
+                    v_days = MAX_WATCH_DAYS
+                limit = min(MAX_WATCH_DAYS, v_days)
                 lines.append(
                     f"| {p['code']} {p.get('name','')} "
                     f"| {p.get('rule_id','')} "
+                    f"| {HORIZON_LABEL.get(h, h)} "
                     f"| {p.get('report_date','—')} "
                     f"| {entry} "
                     f"| {p.get('target','—')} "
                     f"| {p.get('stop_loss','—')} "
-                    f"| {p.get('days_watched',0)}/{MAX_WATCH_DAYS} |"
+                    f"| {p.get('days_watched',0)}/{limit} |"
                 )
             lines.append("")
 
@@ -378,12 +454,16 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
     stats_all      = _compute_stats(rows)
     baseline_rows  = [r for r in rows if r.get("report_date", "") >= BASELINE_DATE]
     stats_baseline = _compute_stats(baseline_rows)
+    v2_rows        = [r for r in rows if r.get("report_date", "") >= V2_BASELINE_DATE]
+    stats_v2       = _compute_stats(v2_rows)
 
     from scripts.auto_update_rules import _load_rules as _lr
     try:
         rules_map = {r["event"]: r for r in _lr()}
     except Exception:
         rules_map = {}
+
+    horizon_map = _rules_horizon_map()
 
     def _h(s: dict, label: str) -> str:
         n = s["closed"]
@@ -406,8 +486,38 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
           </table>
         </div>"""
 
-    # 規則績效表格
+    # 各視野績效（依 horizon 分組，缺則查 rule YAML）
     closed_rows = [r for r in rows if r.get("close_reason") in ("triggered_target", "triggered_stop")]
+    by_horizon: dict[str, list[dict]] = defaultdict(list)
+    for r in closed_rows:
+        h = _resolve_horizon(r, horizon_map)
+        by_horizon[h].append(r)
+
+    horizon_rows_html = ""
+    for h_key in ("event", "trend", "cycle"):
+        recs = by_horizon.get(h_key, [])
+        if not recs:
+            continue
+        s = _compute_stats(recs)
+        n = s["closed"]
+        hit  = f"{s['target_hits']/n*100:.0f}%" if n else "—"
+        stop = f"{s['stop_hits']/n*100:.0f}%"   if n else "—"
+        pf   = f"{s['profit_factor']:.2f}"     if s["profit_factor"] is not None else "—"
+        avg  = f"{s['avg_pct']:+.1f}%"         if s["avg_pct"]       is not None else "—"
+        pnl  = f"{s['total_pnl']:+,.0f}"        if s["pnl_count"] else "—"
+        pf_color  = "#28a745" if (s["profit_factor"] or 0) >= 1 else "#dc3545"
+        hit_color = "#28a745" if (s['target_hits']/max(n,1)) >= 0.5 else "#dc3545"
+        horizon_rows_html += (
+            f"<tr><td>{HORIZON_LABEL.get(h_key, h_key)}</td>"
+            f"<td style='text-align:center'>{n}</td>"
+            f"<td style='text-align:center;color:{hit_color}'><b>{hit}</b></td>"
+            f"<td style='text-align:center;color:#dc3545'>{stop}</td>"
+            f"<td style='text-align:center;color:{pf_color}'><b>{pf}</b></td>"
+            f"<td style='text-align:center'>{avg}</td>"
+            f"<td style='text-align:right'>{pnl}</td></tr>"
+        )
+
+    # 規則績效表格
     by_rule: dict[str, list[dict]] = defaultdict(list)
     for r in closed_rows:
         by_rule[r.get("rule_id", "未知")].append(r)
@@ -486,6 +596,8 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
     holding  = [p for p in open_pos if p.get("state") == "holding"]
     watching = [p for p in open_pos if p.get("state") == "watching"]
 
+    today_dt = datetime.now()
+
     def _pos_row(p: dict) -> str:
         lc = p.get("last_close"); ep = p.get("actual_entry_price")
         try:
@@ -495,26 +607,52 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
             pnl_color = "#28a745" if raw > 0 else "#dc3545"
         except (TypeError, ZeroDivisionError):
             pnl = "—"; pnl_color = "#333"
+        h = _resolve_horizon(p, horizon_map)
+        h_label = HORIZON_LABEL.get(h, h)
+        max_hold = p.get("max_holding_days") or {"event": 30, "trend": 90, "cycle": 180}.get(h, 90)
+        days_held = "—"
+        entry_date = p.get("entry_date")
+        if entry_date:
+            try:
+                ed = datetime.strptime(entry_date, "%Y%m%d")
+                days_held = (today_dt - ed).days
+            except ValueError:
+                pass
         return (f"<tr><td>{p['code']} {p.get('name','')}</td>"
                 f"<td style='font-size:0.85em'>{p.get('rule_id','')}</td>"
-                f"<td>{p.get('entry_date','—')}</td>"
+                f"<td style='text-align:center'>{h_label}</td>"
+                f"<td>{entry_date or '—'}</td>"
                 f"<td style='text-align:right'>{ep or '—'}</td>"
                 f"<td style='text-align:right'>{p.get('target','—')}</td>"
                 f"<td style='text-align:right'>{p.get('stop_loss','—')}</td>"
                 f"<td style='text-align:right'>{lc or '—'}</td>"
-                f"<td style='text-align:right;color:{pnl_color}'><b>{pnl}</b></td></tr>")
+                f"<td style='text-align:right;color:{pnl_color}'><b>{pnl}</b></td>"
+                f"<td style='text-align:center'>{days_held}/{max_hold}</td></tr>")
 
     holding_rows  = "".join(_pos_row(p) for p in holding)
-    watching_rows = "".join(
-        f"<tr><td>{p['code']} {p.get('name','')}</td>"
-        f"<td style='font-size:0.85em'>{p.get('rule_id','')}</td>"
-        f"<td>{p.get('report_date','—')}</td>"
-        f"<td>{p.get('entry_low','—')}–{p.get('entry_high','—')}</td>"
-        f"<td style='text-align:right'>{p.get('target','—')}</td>"
-        f"<td style='text-align:right'>{p.get('stop_loss','—')}</td>"
-        f"<td style='text-align:center'>{p.get('days_watched',0)}/{MAX_WATCH_DAYS}</td></tr>"
-        for p in watching
-    )
+
+    def _watch_row(p: dict) -> str:
+        h = _resolve_horizon(p, horizon_map)
+        h_label = HORIZON_LABEL.get(h, h)
+        v_days = p.get("validity_days") or MAX_WATCH_DAYS
+        try:
+            v_days = int(v_days)
+        except (TypeError, ValueError):
+            v_days = MAX_WATCH_DAYS
+        limit = min(MAX_WATCH_DAYS, v_days)
+        days_watched = p.get("days_watched", 0)
+        # 即將失效用警示色
+        watch_color = "#dc3545" if days_watched >= limit - 1 else "#333"
+        return (f"<tr><td>{p['code']} {p.get('name','')}</td>"
+                f"<td style='font-size:0.85em'>{p.get('rule_id','')}</td>"
+                f"<td style='text-align:center'>{h_label}</td>"
+                f"<td>{p.get('report_date','—')}</td>"
+                f"<td>{p.get('entry_low','—')}–{p.get('entry_high','—')}</td>"
+                f"<td style='text-align:right'>{p.get('target','—')}</td>"
+                f"<td style='text-align:right'>{p.get('stop_loss','—')}</td>"
+                f"<td style='text-align:center;color:{watch_color}'>{days_watched}/{limit}</td></tr>")
+
+    watching_rows = "".join(_watch_row(p) for p in watching)
 
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -549,7 +687,16 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
 <div class="cards">
   {_h(stats_all, "全期績效")}
   {_h(stats_baseline, f"基準期（≥{BASELINE_DATE}）")}
+  {_h(stats_v2, f"v2 期（≥{V2_BASELINE_DATE}）")}
 </div>
+
+{f'''<div class="section">
+  <h2>各視野績效</h2>
+  <table>
+    <thead><tr><th>視野</th><th>筆數</th><th>達標率</th><th>停損率</th><th>PF</th><th>平均損益</th><th>合計(元)</th></tr></thead>
+    <tbody>{horizon_rows_html}</tbody>
+  </table>
+</div>''' if horizon_rows_html else ""}
 
 <div class="section">
   <h2>各規則觸發績效</h2>
@@ -571,8 +718,8 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
   <summary>已進場持倉 ({len(holding)} 筆)</summary>
   <div class="inner">
   <table>
-    <thead><tr><th>股票</th><th>規則</th><th>進場日</th><th>進場價</th><th>目標</th><th>停損</th><th>現價</th><th>浮動損益</th></tr></thead>
-    <tbody>{holding_rows or "<tr><td colspan='8' style='text-align:center;color:#aaa'>無持倉</td></tr>"}</tbody>
+    <thead><tr><th>股票</th><th>規則</th><th>視野</th><th>進場日</th><th>進場價</th><th>目標</th><th>停損</th><th>現價</th><th>浮動損益</th><th>已持/上限</th></tr></thead>
+    <tbody>{holding_rows or "<tr><td colspan='10' style='text-align:center;color:#aaa'>無持倉</td></tr>"}</tbody>
   </table>
   </div>
 </details>
@@ -581,8 +728,8 @@ def _build_html(rows: list[dict], open_pos: list[dict]) -> str:
   <summary>觀察中等待進場 ({len(watching)} 筆)</summary>
   <div class="inner">
   <table>
-    <thead><tr><th>股票</th><th>規則</th><th>推薦日</th><th>進場區間</th><th>目標</th><th>停損</th><th>觀察天數</th></tr></thead>
-    <tbody>{watching_rows or "<tr><td colspan='7' style='text-align:center;color:#aaa'>無觀察部位</td></tr>"}</tbody>
+    <thead><tr><th>股票</th><th>規則</th><th>視野</th><th>推薦日</th><th>進場區間</th><th>目標</th><th>停損</th><th>觀察天數</th></tr></thead>
+    <tbody>{watching_rows or "<tr><td colspan='8' style='text-align:center;color:#aaa'>無觀察部位</td></tr>"}</tbody>
   </table>
   </div>
 </details>
