@@ -372,9 +372,9 @@
           - '2327'
           - '2492'
           - '2472'
-      last_updated_reason: '2026-06-07: 20260606 績效：停損率 100%（2/2 筆）'
+      last_updated_reason: '2026-06-11: 累積達標率 69%（13 筆），調整信心門檻 0.30 → 0.40'
       evidence_source: quant
-    min_confidence: 0.3
+    min_confidence: 0.4
   - event: 成熟製程新廠滿載海外客包產漲價
     keywords:
       - 世界先進
