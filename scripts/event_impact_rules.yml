@@ -1083,3 +1083,42 @@
       last_updated_reason: '2026-06-09: Computex確認NVIDIA推出CPU Whole Rack專供Agentic
         AI workflow，為GPU主導AI伺服器以外的全新產品品類需求，現有規則未涵蓋此CPU整機Rack出貨結構'
       evidence_source: qualitative
+  - event: 台積電CFO明示合理漲價推升PE重估
+    keywords:
+      - 台積電
+      - CFO
+      - 漲價
+      - PE重估
+      - 定價權
+      - 先進製程
+      - 夥伴關係
+    impact:
+      direction: bullish
+      description: 台積電管理層公開確認漲價空間，推動EPS預期上修並觸發PE重估邏輯，帶動台積電及先進製程供應鏈估值提升。
+      sectors:
+        - 晶圓代工
+        - 半導體
+      stocks:
+        晶圓代工:
+          - '2330'
+      last_updated_reason: '2026-06-11: 台積電CFO首度公開提及漲價可能性，確認定價主導權，市場將以合理漲幅重估EPS與PE倍數，為台積電股價提供管理層級基本面支撐敘事，現有規則庫僅涵蓋需求面驅動，未涵蓋供給側定價權聲明。'
+      evidence_source: qualitative
+  - event: NV Kyber工藝遞延背板正交結構輪候
+    keywords:
+      - Kyber
+      - 背板
+      - 正交結構
+      - Q布
+      - 工藝遞延
+      - NVIDIA
+      - Computex
+    impact:
+      direction: bullish
+      description: Kyber量產遞延使正交結構與背板供應鏈題材暫時降溫，待時間點明確時可能觸發資金集中回補行情。
+      sectors:
+        - PCB
+        - 高速連接材料
+        - 散熱
+      stocks: {}
+      last_updated_reason: '2026-06-11: Computex現場直擊確認Kyber設計工藝複雜度高，正交結構、背板、Q布等高速互連材料題材可能進一步遞延；現階段市場不關注形成低基期，待Kyber量產時間點明確時具備集中補漲條件，為現有規則庫未涵蓋的特定工藝遞延輪候模式。'
+      evidence_source: qualitative
