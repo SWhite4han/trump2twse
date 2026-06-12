@@ -1046,7 +1046,7 @@
       - 散熱
       - 電源模組
     impact:
-      direction: bullish
+      direction: mixed
       description: 億元級Power Rack帶動液冷散熱、高功率電源模組、高階PCB廠ASP與毛利率雙升，觸發供應鏈全面重估
       sectors:
         - AI伺服器散熱
@@ -1059,8 +1059,8 @@
         伺服器ODM:
           - '2382'
           - '2356'
-      last_updated_reason: '2026-06-09: Computex現場確認Power Rack體積大5倍、ASP為舊款100倍，為全新產品規格層級，現有規則只追蹤AI伺服器需求量，未涵蓋單價結構性巨幅升格對散熱/電源模組/PCB供應鏈ASP與毛利率的重估效應'
-      evidence_source: qualitative
+      last_updated_reason: '2026-06-12: 20260611 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: Agentic AI驅動CPU整機Rack新品類需求
     keywords:
       - Agentic AI
