@@ -8,3 +8,8 @@ sources:
     trust: medium    # 宏觀推導，需有具體機制與明確股票代碼才接受
     label: Trump新聞
     prefix: ""       # [MM/DD] 格式，非股癌前綴即歸此來源
+
+  tide_tw:
+    trust: medium    # 第三方聚合 TWSE T86 + STOCK_DAY_ALL，數字來自官方但聚合方式為第三方判斷
+    label: Tide板塊資金
+    prefix: ""       # 非文本來源，作為市場背景訊號使用

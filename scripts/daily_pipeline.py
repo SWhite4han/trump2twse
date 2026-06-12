@@ -268,9 +268,22 @@ def _step_classify(texts: list[str], rules: list[dict] | None = None) -> list[di
         # 取得大盤背景（有每日 cache，不重複呼叫 API）
         try:
             mkt = get_market_state()
+            sf = mkt.get("sector_flows") or {}
+            inflow = sf.get("inflow_5d") or []
+            outflow = sf.get("outflow_5d") or []
+            sector_line = ""
+            if inflow or outflow:
+                in_str = "、".join(f"{s['name']}(+{s['net_5d']:.0f}億)" for s in inflow) or "—"
+                out_str = "、".join(f"{s['name']}({s['net_5d']:+.0f}億)" for s in outflow) or "—"
+                sector_line = (
+                    f"近5日法人資金（板塊維度）：流入 {in_str}；流出 {out_str}\n"
+                    f"→ 若事件影響板塊與資金流入方向一致，可給高 confidence；"
+                    f"若事件 bullish 但對應板塊正被法人賣超，請降 confidence 或標記逆勢。\n"
+                )
             market_ctx = (
                 f"\n\n## 今日市場背景（請參考此背景調整 confidence 與 direction）\n"
                 f"{mkt.get('bias_summary', mkt.get('reason', ''))}\n"
+                f"{sector_line}"
                 f"→ 若大盤整體偏多，bearish 事件請降低 confidence；"
                 f"若大盤整體偏空，bullish 事件需有更強基本面支撐才給高 confidence。\n"
             )
@@ -1023,6 +1036,17 @@ def _fmt_rec(r: dict, label_override: str | None = None) -> list[str]:
 
 def _build_telegram_msg(report: dict, today: str) -> str:
     lines = [f"📊 *{today} 每日台股建議*\n"]
+
+    sf = (report.get("market_state") or {}).get("sector_flows") or {}
+    inflow = sf.get("inflow_5d") or []
+    outflow = sf.get("outflow_5d") or []
+    if inflow or outflow:
+        lines.append("💰 *板塊資金（近5日法人）*")
+        if inflow:
+            lines.append("🟢 流入 " + "、".join(s["name"] for s in inflow))
+        if outflow:
+            lines.append("🔴 流出 " + "、".join(s["name"] for s in outflow))
+        lines.append("")
 
     events = report.get("events", [])
     if events:

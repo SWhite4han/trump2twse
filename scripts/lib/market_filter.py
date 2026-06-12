@@ -85,6 +85,7 @@ def _fetch_state() -> dict:
     us   = _fetch_us_market()
     inst = _fetch_institutional()
     txf  = _fetch_txf_night(last)
+    sector_flows = _fetch_sector_flows()
 
     # 連續評分：每 1% 漲跌 = 1 分，各項目有獨立上限避免單一極端值壟斷
     score = 0.0
@@ -125,6 +126,7 @@ def _fetch_state() -> dict:
         "us_market":     us,
         "institutional": inst,
         "txf_night":     txf,
+        "sector_flows":  sector_flows,
         "bias":          bias,
         "bias_summary":  bias_summary,
     }
@@ -235,6 +237,37 @@ def _fetch_txf_night(twii_close: float) -> dict:
     return result
 
 
+def _fetch_sector_flows() -> dict:
+    """從 tide-tw.app 取板塊三大法人 5d 累計流入 / 流出 Top 3。
+
+    fail-soft：tide 不可用回空欄位，不影響 score 計算。
+    """
+    result: dict = {"inflow_5d": [], "outflow_5d": [], "snapshot_date": None, "comment": "板塊資金資料不可用"}
+    try:
+        from scripts.lib.tide_client import fetch_sector_snapshot, top_inflow_sectors, top_outflow_sectors
+        snap = fetch_sector_snapshot()
+        if not snap:
+            return result
+        inflow = top_inflow_sectors(snap, n=3)
+        outflow = top_outflow_sectors(snap, n=3)
+        result["snapshot_date"] = snap.get("date")
+        result["inflow_5d"] = [
+            {"name": s["name"], "net_5d": s["net_5d"], "position": s.get("position"), "chg_5d": s.get("chg_5d")}
+            for s in inflow
+        ]
+        result["outflow_5d"] = [
+            {"name": s["name"], "net_5d": s["net_5d"], "position": s.get("position"), "chg_5d": s.get("chg_5d")}
+            for s in outflow
+        ]
+        if inflow or outflow:
+            in_str = "/".join(s["name"] for s in inflow) or "—"
+            out_str = "/".join(s["name"] for s in outflow) or "—"
+            result["comment"] = f"近5日資金流入 {in_str}；流出 {out_str}"
+    except Exception as e:
+        print(f"       [市場濾網] 板塊資金（tide）失敗（略過）：{e}")
+    return result
+
+
 def _unknown() -> dict:
     return {
         "state":         "unknown",
@@ -246,6 +279,7 @@ def _unknown() -> dict:
         "us_market":     {"sp500_1d_pct": None, "nasdaq_1d_pct": None, "comment": "美股資料不可用"},
         "institutional": {"foreign_net": None, "trust_net": None, "comment": "法人資料不可用"},
         "txf_night":     {"txf_price": None, "txf_pct": None, "comment": "台指期夜盤不可用"},
+        "sector_flows":  {"inflow_5d": [], "outflow_5d": [], "snapshot_date": None, "comment": "板塊資金資料不可用"},
         "bias":          "neutral",
         "bias_summary":  "大盤資料不可用，偏中性",
     }
