@@ -1122,3 +1122,48 @@
       stocks: {}
       last_updated_reason: '2026-06-11: Computex現場直擊確認Kyber設計工藝複雜度高，正交結構、背板、Q布等高速互連材料題材可能進一步遞延；現階段市場不關注形成低基期，待Kyber量產時間點明確時具備集中補漲條件，為現有規則庫未涵蓋的特定工藝遞延輪候模式。'
       evidence_source: qualitative
+  - event: 美伊核協議達成地緣風險溢價降溫
+    keywords:
+      - 美伊協議
+      - Trump取消空襲
+      - 中東和談
+      - 地緣風險降溫
+      - 風險偏好回升
+    impact:
+      direction: bullish
+      description: 中東衝突降溫消除地緣風險溢價，全球風險偏好回升，有利台股半導體及出口類股估值修復
+      sectors:
+        - 半導體
+        - 科技出口
+      stocks:
+        半導體:
+          - '2330'
+        科技出口: []
+      last_updated_reason: '2026-06-12: Trump宣布取消伊朗空襲並稱協議「已全面確定」，與現有規則庫「美伊/中東衝突」（衝突升溫）方向相反，為獨立的緩和事件；BBC雖提附帶條件，但多家媒體同步確認局勢驟降，地緣風險溢價消退對台股科技出口股估值有正面修復效果'
+      evidence_source: qualitative
+  - event: 輝達RTX Spark×Adobe確立AI創作殺手應用帶動高端筆電換機潮
+    keywords:
+      - RTX Spark
+      - Adobe整合
+      - Unified Memory
+      - AI創作工具
+      - 高端筆電換機
+      - RTX N1X
+      - Computex 2025
+    impact:
+      direction: bullish
+      description: 高端AI創作筆電需求爆發拉動聯發科RTX N1X晶片及筆電ODM高ASP產品組合升級
+      sectors:
+        - AI筆電
+        - IC設計
+        - ODM
+      stocks:
+        IC設計:
+          - '2454'
+        ODM:
+          - '2382'
+          - '2324'
+      last_updated_reason: '2026-06-12: Computex 2025現場直擊：RTX Spark搭配Adobe可將剪片時間縮短至1/3~1/5，Unified
+        Memory支援更大模型上機，高端AI筆電ASP達9~10萬元，形成具體商業落地的殺手級應用；有別於現有規則「AI PC地端推論商業化帶動筆電OEM題材重估」著重OEM供給面，本事件強調創作者需求側的高ASP換機動能，並牽動聯發科RTX
+        N1X晶片供應鏈'
+      evidence_source: qualitative
