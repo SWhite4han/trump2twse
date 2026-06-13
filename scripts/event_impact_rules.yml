@@ -1167,3 +1167,24 @@
         Memory支援更大模型上機，高端AI筆電ASP達9~10萬元，形成具體商業落地的殺手級應用；有別於現有規則「AI PC地端推論商業化帶動筆電OEM題材重估」著重OEM供給面，本事件強調創作者需求側的高ASP換機動能，並牽動聯發科RTX
         N1X晶片供應鏈'
       evidence_source: qualitative
+  - event: 聯發科RTX N1X切入高端AI筆電CPU市場
+    keywords:
+      - RTX N1X
+      - 聯發科
+      - 高端AI PC
+      - Computex
+      - 筆電ASP
+      - ARM筆電
+    impact:
+      direction: bullish
+      description: 聯發科藉NVIDIA RTX 
+        N1X協作首度進入高端AI筆電CPU市場，ASP跳升至NT$9~10萬機型，帶動聯發科本業估值重估與筆電ODM供應鏈漲價預期
+      sectors:
+        - AI PC
+        - 筆電供應鏈
+      stocks:
+        AI PC:
+          - '2454'
+      last_updated_reason: '2026-06-14: Computex現場確認RTX N1X筆電ASP達9~10萬台幣，聯發科藉此首次切入高端AI
+        PC處理器供應鏈，與其傳統中低階定位差異顯著，可能帶動ASP與毛利率大幅重估，且與現有規則中的Google TPU ASIC設計路線屬不同市場'
+      evidence_source: qualitative
