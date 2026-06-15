@@ -1188,3 +1188,20 @@
       last_updated_reason: '2026-06-14: Computex現場確認RTX N1X筆電ASP達9~10萬台幣，聯發科藉此首次切入高端AI
         PC處理器供應鏈，與其傳統中低階定位差異顯著，可能帶動ASP與毛利率大幅重估，且與現有規則中的Google TPU ASIC設計路線屬不同市場'
       evidence_source: qualitative
+  - event: CPO量產遞延引發光通族群基本面重估
+    keywords:
+      - CPO
+      - 共封裝光學
+      - 量產遞延
+      - SemiAnalysis
+      - 光通轉弱
+      - 時程落後
+    impact:
+      direction: bearish
+      description: CPO量產不及預期導致光通族群成長敘事時程拉長，評價面臨向下重估，資金轉移至被動元件等近期數字確定性更高的族群
+      sectors:
+        - optical_communications
+      stocks:
+        optical_communications: []
+      last_updated_reason: '2026-06-15: SemiAnalysis報告指出CPO共封裝光學量產時程遞延，股癌EP669明確觀察到光通族群轉弱，並指出投資圈原先把數字喊高、日期提前，現在面臨miss或改設計的修正壓力。現有規則庫有光通看漲規則，但缺乏CPO技術遞延作為獨立看空催化劑的對應規則'
+      evidence_source: qualitative
