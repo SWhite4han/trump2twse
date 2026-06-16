@@ -55,6 +55,21 @@ _OVERHEAT_GAIN_THRESHOLD = 0.15
 # 連續推薦去重：近 N 日 daily_report 內已出現過的 (rule_id, code) 視為重複而剔除
 _DEDUP_LOOKBACK_DAYS = 5
 
+# C-guard 跨日反向訊號攔截：新訊號 conf 同時滿足 (≥ 舊倉 conf + margin) 且 (≥ abs floor) → 反轉警示模式，否則純擋
+_CGUARD_CONF_MARGIN = 0.10
+_CGUARD_CONF_ABS_FLOOR = 0.65
+
+# 方案 D 重複訊號強化（同 (code, rule_id) 已 holding）參數
+_REINFORCE_THROTTLE_DAYS = 3              # 同部位再強化最短間隔（日曆天，近似 3 交易日）
+_REINFORCE_TARGET_CAP_RATIO = 1.5         # 累積 target 不得超過原始 target × 1.5（賣方向相反）
+_REINFORCE_STOP_LOOSEN_RATIO = 0.97       # 買方 stop × 0.97（往下放鬆）；賣方對稱用 1.03
+_REINFORCE_STOP_FLOOR_RATIO = 0.85        # 買方 stop 下限 = actual_entry × 0.85；賣方上限 = entry × 1.15
+
+# Action 常數（與 track_recommendation_performance 一致）
+_ACTION_BUY = "觀察買進"
+_ACTION_SELL = "觀察賣出"
+_ACTION_WATCH = "停看等"
+
 
 # --------------------------------------------------------------------------- #
 # 共用工具
@@ -141,8 +156,8 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 2/10：LLM 事件分類 ─────────────────────────────────────
     matched_events = _step_classify(raw_texts, rules=rules)
 
-    # ── Step 3/10：規則匹配 → 建議清單 ──────────────────────────────
-    recommendations = _step_match_rules(matched_events, rules=rules)
+    # ── Step 3/10：規則匹配 → 建議清單（含 C-guard 反向訊號攔截）────
+    recommendations, reverse_alerts = _step_match_rules(matched_events, rules=rules)
 
     # ── Step 4/10：大盤方向濾網（台指/TWII）─────────────────────────
     recommendations = _step_market_filter(recommendations)
@@ -159,12 +174,21 @@ def run(skip_fetch: bool = False, dry_run: bool = False, shadow: bool = False,
     # ── Step 6.6/10：近 N 日重複推薦去重 ────────────────────────────
     recommendations = _step_dedup_recent(recommendations, today_compact)
 
-    # ── Step 7/10（前）：投資組合決策（持倉感知）───────────────────
+    # ── Step 6.7/10：方案 D 重複訊號強化（同 code+rule 已 holding）─
     open_positions = _load_open_positions()
-    recommendations, position_updates = _step_portfolio_decision(recommendations, open_positions, dry_run=dry_run)
+    recommendations, reinforce_updates = _step_reinforce_positions(
+        recommendations, open_positions, today_compact, shadow=shadow
+    )
+
+    # ── Step 7/10（前）：投資組合決策（持倉感知）───────────────────
+    recommendations, port_updates = _step_portfolio_decision(recommendations, open_positions, dry_run=dry_run)
+    position_updates = reinforce_updates + port_updates
 
     # ── Step 7/10：儲存日報 ─────────────────────────────────────────
-    report = _step_save_report(recommendations, matched_events, today_compact, position_updates)
+    report = _step_save_report(
+        recommendations, matched_events, today_compact,
+        position_updates=position_updates, reverse_alerts=reverse_alerts,
+    )
 
     # ── Step 8/10：Telegram 推送 ─────────────────────────────────────
     if not dry_run:
@@ -377,23 +401,44 @@ def _load_open_positions() -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 def _step_match_rules(matched_events: list[dict],
-                      rules: list[dict] | None = None) -> list[dict]:
+                      rules: list[dict] | None = None) -> tuple[list[dict], list[dict]]:
+    """產生今日建議清單，同時回傳跨日反向訊號的警示（C-guard）。
+
+    Returns:
+        recommendations: 通過所有過濾的建議
+        reverse_alerts:  與舊倉反向且 confidence 強於舊倉的訊號（擋掉新建倉，僅警示）
+    """
     print(f"[3/10] 規則匹配（{len(matched_events)} 個事件）…")
     if not matched_events:
-        return []
+        return [], []
 
     if rules is None:
         rules = _load_rules()
     rule_map = {r["event"]: r for r in rules}
     recommendations: list[dict] = []
+    reverse_alerts: list[dict] = []
     seen_codes: set[str] = set()
 
     existing = _load_open_positions()
-    active_pairs: set[tuple[str, str]] = {
+    # 只擋同 (code, rule_id) 且 state=watching 的；holding 讓建議流過去由 _step_reinforce_positions 處理
+    active_pairs_watching: set[tuple[str, str]] = {
         (p["code"], p["rule_id"])
         for p in existing
-        if p.get("state") in ("watching", "holding")
+        if p.get("state") == "watching"
     }
+    # 同 code 跨規則反向訊號偵測用：code → [(action, confidence, rule_id), ...]
+    code_to_active: dict[str, list[tuple[str, float, str]]] = {}
+    for p in existing:
+        if p.get("state") not in ("watching", "holding"):
+            continue
+        act = p.get("action")
+        if act not in (_ACTION_BUY, _ACTION_SELL):
+            continue
+        code_to_active.setdefault(p["code"], []).append((
+            act,
+            float(p.get("confidence") or 0.5),
+            p.get("rule_id", ""),
+        ))
     rule_counts: dict[str, int] = {}
 
     for ev in matched_events:
@@ -421,11 +466,40 @@ def _step_match_rules(matched_events: list[dict],
                     break
                 if code in seen_codes:
                     continue
-                if (code, rule_id) in active_pairs:
+                if (code, rule_id) in active_pairs_watching:
                     continue
+                action = _direction_to_action(direction, sector)
+                new_conf = float(ev.get("confidence") or 0.5)
+
+                # C-guard：跨日反向訊號攔截（買↔賣才算反向，停看等不算）
+                if action in (_ACTION_BUY, _ACTION_SELL):
+                    opposites = [
+                        (a, c, r) for a, c, r in code_to_active.get(code, [])
+                        if {a, action} == {_ACTION_BUY, _ACTION_SELL}
+                    ]
+                    if opposites:
+                        max_old_conf = max(c for _, c, _ in opposites)
+                        old_act = opposites[0][0]
+                        old_rule = opposites[0][2]
+                        if (new_conf >= max_old_conf + _CGUARD_CONF_MARGIN
+                                and new_conf >= _CGUARD_CONF_ABS_FLOOR):
+                            reverse_alerts.append({
+                                "code": code,
+                                "new_action": action,
+                                "new_rule_id": rule_id,
+                                "new_confidence": round(new_conf, 2),
+                                "existing_action": old_act,
+                                "existing_rule_id": old_rule,
+                                "existing_confidence": round(max_old_conf, 2),
+                                "summary": ev.get("summary", ""),
+                            })
+                            print(f"       ⚠️  [C-guard] {code} 反向訊號強於舊倉：新 {action}/{new_conf:.2f} > 舊 {old_act}/{max_old_conf:.2f} → 警示（仍擋新倉）")
+                        else:
+                            print(f"       🛑 [C-guard] {code} 反向訊號未達門檻：新 {action}/{new_conf:.2f} vs 舊 {old_act}/{max_old_conf:.2f} → 擋掉")
+                        continue
+
                 seen_codes.add(code)
                 rule_counts[rule_id] = rule_counts.get(rule_id, 0) + 1
-                action = _direction_to_action(direction, sector)
                 _horizon = rule.get("horizon", "trend")
                 recommendations.append({
                     "code": code,
@@ -443,8 +517,8 @@ def _step_match_rules(matched_events: list[dict],
                     "max_holding_days": {"event": 30, "trend": 90, "cycle": 180}.get(_horizon, 90),
                 })
 
-    print(f"       產生 {len(recommendations)} 筆建議（現有追蹤 {len(active_pairs)} 對）")
-    return recommendations
+    print(f"       產生 {len(recommendations)} 筆建議（watching 鎖 {len(active_pairs_watching)} 對，反向警示 {len(reverse_alerts)} 筆）")
+    return recommendations, reverse_alerts
 
 
 def _direction_to_action(direction: str, sector: str) -> str:
@@ -847,6 +921,133 @@ def _step_dedup_recent(recs: list[dict], today_compact: str) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# Step 4.65：重複訊號強化（方案 D）
+# --------------------------------------------------------------------------- #
+
+def _step_reinforce_positions(
+    recs: list[dict],
+    open_positions: list[dict],
+    today_compact: str,
+    shadow: bool = False,
+) -> tuple[list[dict], list[dict]]:
+    """方案 D：同 (code, rule_id) 已 holding 的新訊號 → 抽出轉為 raise_target 強化。
+
+    規則：
+      - Target = max(舊 target, 今日 target)，cap = 原始 target × 1.5
+      - Stop（買進）= max(舊 stop × 0.97, entry × 0.85)；賣方對稱
+      - 節流：同部位 ≥ N 日才能再 reinforce
+      - 啟動門檻：浮動獲利 ≥ 0%（浮虧中不強化）
+      - shadow=True：log 並寫入 report 但標記 shadow，track 階段不套用
+    """
+    if not recs:
+        return recs, []
+    holdings_by_key: dict[tuple[str, str], dict] = {}
+    for p in open_positions:
+        if p.get("state") != "holding":
+            continue
+        key = (p.get("code"), p.get("rule_id"))
+        if all(key):
+            holdings_by_key[key] = p
+
+    if not holdings_by_key:
+        return recs, []
+
+    print(f"[6.7/10] 重複訊號強化檢查（{len(recs)} 筆 vs {len(holdings_by_key)} holding）…")
+
+    try:
+        today_dt = datetime.strptime(today_compact, "%Y%m%d")
+    except ValueError:
+        print("       today_compact 解析失敗，略過強化")
+        return recs, []
+
+    kept_recs: list[dict] = []
+    reinforce_updates: list[dict] = []
+
+    for r in recs:
+        key = (r.get("code"), r.get("rule_id"))
+        pos = holdings_by_key.get(key)
+        if not pos:
+            kept_recs.append(r)
+            continue
+
+        # 節流
+        last_rein = pos.get("last_reinforced_date")
+        if last_rein:
+            try:
+                last_dt = datetime.strptime(last_rein, "%Y%m%d")
+                if (today_dt - last_dt).days < _REINFORCE_THROTTLE_DAYS:
+                    print(f"       ⏳ [D] {r.get('code')} {r.get('name','')} 跳過：{last_rein} 已 reinforce（< {_REINFORCE_THROTTLE_DAYS} 日節流）")
+                    continue
+            except ValueError:
+                pass
+
+        entry = pos.get("actual_entry_price")
+        last_close = pos.get("last_close")
+        old_target = pos.get("target")
+        old_stop = pos.get("stop_loss")
+        if not (entry and last_close and old_target and old_stop):
+            print(f"       ⊝ [D] {r.get('code')} 跳過：舊倉欄位不完整")
+            continue
+
+        is_sell = pos.get("action") == _ACTION_SELL
+        pnl_pct = ((entry - last_close) if is_sell else (last_close - entry)) / entry
+        if pnl_pct < 0:
+            print(f"       💤 [D] {r.get('code')} 跳過：浮虧 {pnl_pct*100:+.1f}%（待趨勢確認）")
+            continue
+
+        # 原始 target（第一次 reinforce 時鎖定）
+        original_target = pos.get("target_original") or old_target
+
+        # 計算 new_target
+        today_target = r.get("target")
+        if is_sell:
+            # 賣方目標在下方，「強化」= target 更低
+            candidate = min(old_target, today_target) if today_target else old_target
+            cap = original_target / _REINFORCE_TARGET_CAP_RATIO  # 下界
+            new_target = max(candidate, cap)
+        else:
+            candidate = max(old_target, today_target) if today_target else old_target
+            cap = original_target * _REINFORCE_TARGET_CAP_RATIO
+            new_target = min(candidate, cap)
+
+        # 計算 new_stop（往「不利方向」放鬆 = 給趨勢更多空間）
+        if is_sell:
+            stop_ceiling = entry * (2 - _REINFORCE_STOP_FLOOR_RATIO)  # = entry × 1.15
+            new_stop = min(old_stop * (2 - _REINFORCE_STOP_LOOSEN_RATIO), stop_ceiling)
+        else:
+            stop_floor = entry * _REINFORCE_STOP_FLOOR_RATIO
+            new_stop = max(old_stop * _REINFORCE_STOP_LOOSEN_RATIO, stop_floor)
+
+        new_target = round(new_target, 2)
+        new_stop = round(new_stop, 2)
+        target_changed = abs(new_target - old_target) > 0.01
+        stop_changed = abs(new_stop - old_stop) > 0.01
+
+        if not target_changed and not stop_changed:
+            print(f"       ⊝ [D] {r.get('code')} 無實質變化（已達上下限）")
+            continue
+
+        tag = "[SHADOW]" if shadow else ""
+        print(f"       🔧 [D]{tag} {r.get('code')} {r.get('name','')} target {old_target}→{new_target}  stop {old_stop}→{new_stop}  浮動 {pnl_pct*100:+.1f}%")
+
+        reinforce_updates.append({
+            "code": r.get("code"),
+            "name": r.get("name", pos.get("name", "")),
+            "update_type": "raise_target",
+            "new_target": new_target if target_changed else None,
+            "new_stop": new_stop if stop_changed else None,
+            "reason": f"規則「{(r.get('rule_id') or '')[:18]}」再次觸發（浮動 {pnl_pct*100:+.1f}%）",
+            "rule_id": r.get("rule_id", ""),
+            "reinforced_on": today_compact,
+            "source": "reinforce",
+            "shadow": shadow,
+        })
+
+    print(f"       保留 {len(kept_recs)} / {len(recs)} 筆，產出 {len(reinforce_updates)} 筆強化指令")
+    return kept_recs, reinforce_updates
+
+
+# --------------------------------------------------------------------------- #
 # Step 4.7：投資組合決策
 # --------------------------------------------------------------------------- #
 
@@ -964,7 +1165,8 @@ def _step_portfolio_decision(
 # --------------------------------------------------------------------------- #
 
 def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
-                      position_updates: list[dict] | None = None) -> dict:
+                      position_updates: list[dict] | None = None,
+                      reverse_alerts: list[dict] | None = None) -> dict:
     print("[7/10] 儲存日報…")
     from scripts.lib.market_filter import get_market_state
     report = {
@@ -974,6 +1176,7 @@ def _step_save_report(recs: list[dict], events: list[dict], date_compact: str,
         "events": events,
         "recommendations": recs,
         "position_updates": position_updates or [],
+        "reverse_alerts": reverse_alerts or [],
     }
     out_dir = config.data_dir / "reports"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1098,19 +1301,52 @@ def _build_telegram_msg(report: dict, today: str) -> str:
         lines.append("")
 
     if pos_updates:
-        lines.append("🎯 *持倉目標上調*")
-        for u in pos_updates[:5]:
-            name_line = f"• {u['code']}"
-            if u.get("new_target"):
-                name_line += f"  新目標 {u['new_target']}"
-            if u.get("new_stop"):
-                name_line += f"  新停損 {u['new_stop']}"
-            lines.append(name_line)
-            if u.get("reason"):
-                lines.append(f"  ↳ {u['reason']}")
+        reinforce_ups = [u for u in pos_updates if u.get("source") == "reinforce"]
+        other_ups = [u for u in pos_updates if u.get("source") != "reinforce"]
+
+        if reinforce_ups:
+            lines.append("🔧 *持倉強化（重複訊號）*")
+            for u in reinforce_ups[:5]:
+                shadow_tag = " `[SHADOW]`" if u.get("shadow") else ""
+                name_line = f"• {u['code']} {u.get('name','')}".rstrip() + shadow_tag
+                if u.get("new_target"):
+                    name_line += f"  目標→{u['new_target']}"
+                if u.get("new_stop"):
+                    name_line += f"  停損→{u['new_stop']}"
+                lines.append(name_line)
+                if u.get("reason"):
+                    lines.append(f"  ↳ {u['reason']}")
+            lines.append("")
+
+        if other_ups:
+            lines.append("🎯 *持倉目標上調*")
+            for u in other_ups[:5]:
+                name_line = f"• {u['code']}"
+                if u.get("new_target"):
+                    name_line += f"  新目標 {u['new_target']}"
+                if u.get("new_stop"):
+                    name_line += f"  新停損 {u['new_stop']}"
+                lines.append(name_line)
+                if u.get("reason"):
+                    lines.append(f"  ↳ {u['reason']}")
+            lines.append("")
+
+    rev_alerts = report.get("reverse_alerts") or []
+    if rev_alerts:
+        lines.append("⚠️ *反向訊號警示（請手動審視）*")
+        for a in rev_alerts[:5]:
+            new_a = a.get("new_action", "")
+            old_a = a.get("existing_action", "")
+            new_c = a.get("new_confidence", 0)
+            old_c = a.get("existing_confidence", 0)
+            lines.append(f"• {a['code']}：新 {new_a}/{new_c:.2f} vs 舊 {old_a}/{old_c:.2f}")
+            if a.get("summary"):
+                lines.append(f"  ↳ {a['summary']}")
+            lines.append(f"  新規則：{a.get('new_rule_id','')[:24]}")
+            lines.append(f"  舊規則：{a.get('existing_rule_id','')[:24]}")
         lines.append("")
 
-    if not buy and not watch and not add_recs and not pos_updates:
+    if not buy and not watch and not add_recs and not pos_updates and not rev_alerts:
         lines.append("今日無明確建議標的，維持觀望。")
         matched_rule_ids = {r.get("rule_id") for r in groups["all_recs"]}
         unmatched = [e for e in events if e.get("event") not in matched_rule_ids and e.get("confidence", 0) >= 0.5]

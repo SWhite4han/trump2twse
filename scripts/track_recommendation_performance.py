@@ -153,6 +153,9 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
         # 套用 raise_target 調整（不關閉倉位）
         if code in position_updates:
             upd = position_updates[code]
+            # 方案 D：第一次強化時鎖定原始 target，作為日後 cap 1.5× 的基準
+            if upd.get("source") == "reinforce" and not pos.get("target_original"):
+                pos["target_original"] = pos.get("target")
             if upd.get("new_target"):
                 pos["target"] = upd["new_target"]
             if upd.get("new_stop"):
@@ -166,6 +169,8 @@ def run(report_date: Optional[str] = None, shadow: bool = False,
                 else:
                     print(f"[perf] 拒絕無效 stop 更新 {pos['code']}："
                           f"new_stop={new_stop} 與進場區間倒掛，保留原值 {pos['stop_loss']}")
+            # 紀錄強化日期供節流檢查（無論 source 都記，方便除錯）
+            pos["last_reinforced_date"] = upd.get("reinforced_on") or report_date
 
         # 逾期未進場：validity_days 與 MAX_WATCH_DAYS 取較小者
         pos["days_watched"] = pos.get("days_watched", 0) + 1
@@ -338,13 +343,17 @@ def _load_recommendations(date_str: str) -> list[dict]:
 
 
 def _load_position_updates(date_str: str) -> dict[str, dict]:
-    """回傳 {code: update_dict}，只含 raise_target 類型。"""
+    """回傳 {code: update_dict}，只含 raise_target 類型且非 shadow。"""
     report_file = config.data_dir / "reports" / f"daily_report_{date_str}.json"
     if not report_file.exists():
         return {}
     with open(report_file, encoding="utf-8") as f:
         updates = json.load(f).get("position_updates", [])
-    return {u["code"]: u for u in updates if u.get("update_type") == "raise_target"}
+    return {
+        u["code"]: u
+        for u in updates
+        if u.get("update_type") == "raise_target" and not u.get("shadow")
+    }
 
 
 # --------------------------------------------------------------------------- #
