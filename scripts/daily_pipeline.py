@@ -747,6 +747,13 @@ def _step_enrich_ta(recs: list[dict], report_date: str | None = None) -> list[di
         print(f"       TA LLM 失敗（使用 ±3/5% 預設值）：{e}")
 
     _finalize_validity(recs, report_date)
+
+    # 若 TWSE 與 yfinance 都查不到名稱，視為已下市/無效代碼，丟棄避免報告出現裸代碼
+    nameless = [r for r in recs if not r.get("name")]
+    if nameless:
+        for r in nameless:
+            print(f"       ⚠️  丟棄 {r.get('code')}：TWSE/yfinance 皆查無名稱（可能已下市或代碼錯誤）")
+        recs = [r for r in recs if r.get("name")]
     return recs
 
 
@@ -936,6 +943,7 @@ def _step_portfolio_decision(
         elif update_type == "raise_target":
             position_updates.append({
                 "code":       r["code"],
+                "name":       r.get("name", ""),
                 "update_type": "raise_target",
                 "new_target": dec.get("new_target") if dec else r.get("target"),
                 "new_stop":   dec.get("new_stop")   if dec else r.get("stop_loss"),

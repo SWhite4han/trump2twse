@@ -943,12 +943,9 @@
         - inductors
         - resistors
       stocks:
-        inductors:
-          - '2456'
-          - '2452'
-        resistors:
-          - '2437'
-      last_updated_reason: '2026-06-03: EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列，被動元件短缺範疇從電容類擴至電感電阻，供應鏈衝擊面加寬，且江海電容備忘錄指出全球缺口約20%+'
+        inductors: []
+        resistors: []
+      last_updated_reason: '2026-06-16: 移除 2456（已併入 2327）、2437（已下市）、2452（yfinance 查無對應上市標的），待補入仍在市的電感/電阻廠代碼。原 2026-06-03 規則內容：EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列'
       evidence_source: qualitative
   - event: 被動元件2018超級循環毛利率重估升評
     keywords:
