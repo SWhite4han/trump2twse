@@ -32,7 +32,8 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers: 3 限制過度集中'
+      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers:
+        3 限制過度集中'
       evidence_source: quant
     min_confidence: 0.65
     max_daily_triggers: 3
@@ -950,7 +951,8 @@
       stocks:
         inductors: []
         resistors: []
-      last_updated_reason: '2026-06-16: 移除 2456（已併入 2327）、2437（已下市）、2452（yfinance 查無對應上市標的），待補入仍在市的電感/電阻廠代碼。原 2026-06-03 規則內容：EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列'
+      last_updated_reason: '2026-06-16: 移除 2456（已併入 2327）、2437（已下市）、2452（yfinance
+        查無對應上市標的），待補入仍在市的電感/電阻廠代碼。原 2026-06-03 規則內容：EP666明確列出缺貨清單：電感、電阻已加入鉭電容/MLCC/鋁電容行列'
       evidence_source: qualitative
   - event: 被動元件2018超級循環毛利率重估升評
     keywords:
@@ -1206,4 +1208,29 @@
       stocks:
         optical_communications: []
       last_updated_reason: '2026-06-15: SemiAnalysis報告指出CPO共封裝光學量產時程遞延，股癌EP669明確觀察到光通族群轉弱，並指出投資圈原先把數字喊高、日期提前，現在面臨miss或改設計的修正壓力。現有規則庫有光通看漲規則，但缺乏CPO技術遞延作為獨立看空催化劑的對應規則'
+      evidence_source: qualitative
+  - event: 歐美IDM功率半導體缺貨台廠搶單替代
+    keywords:
+      - IDM
+      - lead time
+      - Mosfet
+      - PMIC
+      - 高壓
+      - 二三供
+      - 6吋
+      - 8吋
+      - 伺服器Mosfet
+    impact:
+      direction: bullish
+      description: 歐美 IDM 長交期迫使客戶轉單台灣二三線 MOSFET/PMIC 廠，連帶拉升 6/8 吋成熟製程代工廠稼動率
+      sectors:
+        - power_semiconductor
+        - mature_foundry
+      stocks:
+        power_semiconductor:
+          - '2481'
+        mature_foundry:
+          - '5347'
+      last_updated_reason: '2026-06-25: EP672 明確指出 TI、STM、ON Semi 等歐美 IDM 高壓 Mosfet
+        與伺服器 Mosfet 的 lead time 急劇拉長，客戶被迫轉向台灣二三線供應商補料，且 6/8 吋代工廠股價同步走強。此與現有規則「功率半導體需求驅動漲價潮」的機制不同：前者是漲價推升毛利，本事件核心是替代搶單帶動台廠稼動率與市占率雙升，具備獨立的追蹤價值。'
       evidence_source: qualitative
