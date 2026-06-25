@@ -426,13 +426,14 @@ def _check_rule_performance_updates(rows: list[dict]) -> list[dict]:
             continue  # 已停用就不再調整門檻
 
         # Confidence 門檻調整（僅針對未停用規則）
+        # 單調原則：低勝率只能升、高勝率只能降，不可撤銷使用者手動加嚴
         if not is_disabled:
             if win_rate > BOOST_WIN_RATE:
-                new_conf = 0.30
+                new_conf = min(current_conf, 0.30)
             elif win_rate < TIGHTEN_WIN_RATE:
-                new_conf = 0.50
+                new_conf = max(current_conf, 0.50)
             else:
-                new_conf = 0.40
+                new_conf = current_conf
 
             if abs(current_conf - new_conf) > 0.01:
                 updates.append({
