@@ -32,10 +32,9 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers:
-        3 限制過度集中'
+      last_updated_reason: '2026-06-25: 累積達標率 27%（22 筆），調整信心門檻 0.65 → 0.50'
       evidence_source: quant
-    min_confidence: 0.65
+    min_confidence: 0.5
     max_daily_triggers: 3
   - event: "美國對中半導體禁令"
     keywords:
