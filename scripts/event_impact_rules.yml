@@ -32,9 +32,10 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-09: 累積達標率 38%（13 筆），調整信心門檻 0.30 → 0.50'
+      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers: 3 限制過度集中'
       evidence_source: quant
-    min_confidence: 0.5
+    min_confidence: 0.65
+    max_daily_triggers: 3
   - event: "美國對中半導體禁令"
     keywords:
       - "chip ban"
@@ -77,6 +78,8 @@
           - "2317" # 鴻海
         PCB:
           - "3034" # 聯詳
+      last_updated_reason: '2026-06-25: 累積 2/2 全停損（達標率 0%），暫停規則'
+    disabled: true
   - event: 美東南亞貿易協議僵局
     keywords:
       - Southeast Asia
@@ -763,8 +766,9 @@
         passive_component_distribution:
           - '3702'
           - '3036'
-      last_updated_reason: '2026-06-09: 20260608 績效：停損率 100%（4/4 筆）'
+      last_updated_reason: '2026-06-25: 累積 4/4 全停損（達標率 0%），暫停規則'
       evidence_source: quant
+    disabled: true
   - event: 光通休息資金輪動回ODM/EMS接棒
     keywords:
       - 資金輪動
@@ -865,8 +869,9 @@
           - '2049'
         能源儲存:
           - '2308'
-      last_updated_reason: '2026-05-31: 股癌EP665明確指出市場已不再以電動車出貨量評估Tesla/Musk概念，重心轉移至能源儲存、人形機器人、自動駕駛，台灣相關供應鏈獲新敘事支撐'
+      last_updated_reason: '2026-06-25: 累積 2/2 全停損（達標率 0%），暫停規則'
       evidence_source: qualitative
+    disabled: true
   - event: Trump對歐盟汽車關稅升至25%
     keywords:
       - EU汽車關稅
