@@ -32,7 +32,8 @@
         gold: # 黃金相關ETF
           - "00635U" # 期元大S&P黃金
 
-      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers: 3 限制過度集中'
+      last_updated_reason: '2026-06-25: 累積 22 筆達標率 27%（6/16），再升門檻 0.50 → 0.65 並加 max_daily_triggers:
+        3 限制過度集中'
       evidence_source: quant
     min_confidence: 0.65
     max_daily_triggers: 3
@@ -1232,4 +1233,24 @@
           - '5347'
       last_updated_reason: '2026-06-25: EP672 明確指出 TI、STM、ON Semi 等歐美 IDM 高壓 Mosfet
         與伺服器 Mosfet 的 lead time 急劇拉長，客戶被迫轉向台灣二三線供應商補料，且 6/8 吋代工廠股價同步走強。此與現有規則「功率半導體需求驅動漲價潮」的機制不同：前者是漲價推升毛利，本事件核心是替代搶單帶動台廠稼動率與市占率雙升，具備獨立的追蹤價值。'
+      evidence_source: qualitative
+  - event: AI排擠效應推升6/8吋代工廠功率元件訂單
+    keywords:
+      - 6吋代工廠
+      - 8吋代工廠
+      - Mosfet
+      - PMIC
+      - AI排擠效應
+      - lead time拉長
+      - 功率半導體溢出
+    impact:
+      direction: bullish
+      description: IDM功率半導體交期拉長，溢出訂單流向台灣6/8吋代工廠，帶動稼動率與ASP雙升
+      sectors:
+        - power_semiconductor_foundry
+      stocks:
+        power_semiconductor_foundry:
+          - '5347'
+      last_updated_reason: '2026-06-26: EP672明確指出：AI伺服器優先佔用IDM產能，致工業/車用Mosfet客戶無法從一供拿貨，轉向台灣6吋/8吋矽晶圓代工廠下單，主持人點名6/8吋代工廠股價已呈相對強勢，此機制聚焦於晶圓代工廠層（foundry
+        capacity）而非現有規則涵蓋的品牌台廠設計/銷售替代角度，屬全新投資切入點'
       evidence_source: qualitative
