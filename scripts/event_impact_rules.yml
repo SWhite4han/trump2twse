@@ -1254,3 +1254,37 @@
       last_updated_reason: '2026-06-26: EP672明確指出：AI伺服器優先佔用IDM產能，致工業/車用Mosfet客戶無法從一供拿貨，轉向台灣6吋/8吋矽晶圓代工廠下單，主持人點名6/8吋代工廠股價已呈相對強勢，此機制聚焦於晶圓代工廠層（foundry
         capacity）而非現有規則涵蓋的品牌台廠設計/銷售替代角度，屬全新投資切入點'
       evidence_source: qualitative
+  - event: 主權基金季末再平衡系統性減碼科技股
+    keywords:
+      - 主權基金
+      - 退休基金
+      - 季度再平衡
+      - 科技股減碼
+      - 制度性賣壓
+    impact:
+      direction: bearish
+      description: 非基本面惡化的制度性拋壓造成短期修正，半導體與AI硬體主流股受壓，但修正後反提供低接機會
+      sectors:
+        - semiconductor
+        - AI_hardware
+      stocks:
+        semiconductor:
+          - '2330'
+      last_updated_reason: '2026-06-30: EP674明確指出本波回檔最可能原因為主權基金與退休基金因科技股漲多、組合占比過高，進行季度機械式再平衡減碼，屬週期性制度性賣壓而非基本面惡化，現有規則庫未涵蓋此類定期性拋壓模式'
+      evidence_source: qualitative
+  - event: Trump對數位服務稅國家百分百關稅威脅
+    keywords:
+      - 數位服務稅
+      - DST
+      - 百分百關稅
+      - 美英貿易戰
+      - 科技公司稅
+    impact:
+      direction: bullish
+      description: 威脅迫使歐英撤回DST以避免百分百關稅，保護美國科技巨頭海外數位收入與AI投資能力，間接支撐台灣AI伺服器供應鏈需求穩定
+      sectors:
+        - AI_hardware
+        - semiconductor
+      stocks: {}
+      last_updated_reason: '2026-06-30: 多則新聞（CNBC、The Times）確認Trump明確威脅對英國等徵收數位服務稅（DST）的國家課以百分百關稅，為針對數位經濟的全新貿易報復模式，與現有商品關稅規則不同，若升級將影響全球科技公司稅務結構與AI資本支出節奏'
+      evidence_source: qualitative
