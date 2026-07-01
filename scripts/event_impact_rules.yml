@@ -1288,3 +1288,43 @@
       stocks: {}
       last_updated_reason: '2026-06-30: 多則新聞（CNBC、The Times）確認Trump明確威脅對英國等徵收數位服務稅（DST）的國家課以百分百關稅，為針對數位經濟的全新貿易報復模式，與現有商品關稅規則不同，若升級將影響全球科技公司稅務結構與AI資本支出節奏'
       evidence_source: qualitative
+  - event: 韓裔槓桿基金爆倉衝擊台股流動性
+    keywords:
+      - 韓裔爆倉
+      - Archegos
+      - 槓桿斷頭
+      - 台股急殺
+      - 流動性衝擊
+      - 外資強制平倉
+    impact:
+      direction: bearish
+      description: 海外高槓桿基金被迫斷頭引發連鎖賣壓，造成台股強勢股瞬間急殺、市場流動性短暫枯竭
+      sectors:
+        - broad_market
+        - high_momentum_stocks
+      stocks:
+        broad_market: []
+      last_updated_reason: '2026-07-01: 股癌EP673明確點名類似Archegos韓裔槓桿資金為此波台股急殺主因，此類外資槓桿斷頭事件具系統性流動性衝擊特徵，與國內融資過熱或基本面利空屬不同事件類型，現有規則庫未涵蓋'
+      evidence_source: qualitative
+  - event: Section 301越南巴西強迫勞動關稅制裁
+    keywords:
+      - Section 301
+      - 強迫勞動
+      - 越南關稅
+      - 巴西制裁
+      - 供應鏈重組
+      - 貿易法301條
+    impact:
+      direction: bearish
+      description: Section 301強迫勞動認定對越南生產貨品課徵額外關稅，削弱台廠越南廠區出口競爭力並迫使供應鏈再次重組
+      sectors:
+        - ODM
+        - PCB
+        - EMS
+        - passive_components
+      stocks:
+        PCB:
+          - '3037'
+        EMS: []
+      last_updated_reason: '2026-07-01: 美國新啟動Section 301強迫勞動調查並對越南、巴西採取關稅行動，法律機制（貿易法301條）與現有反規避稽查令（IEEPA海關執法）完全不同，直接針對生產端而非轉口行為，衝擊在越南大量設廠的台灣ODM/PCB/電子零組件廠'
+      evidence_source: qualitative
