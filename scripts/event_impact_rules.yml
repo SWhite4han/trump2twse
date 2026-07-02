@@ -1328,3 +1328,61 @@
         EMS: []
       last_updated_reason: '2026-07-01: 美國新啟動Section 301強迫勞動調查並對越南、巴西採取關稅行動，法律機制（貿易法301條）與現有反規避稽查令（IEEPA海關執法）完全不同，直接針對生產端而非轉口行為，衝擊在越南大量設廠的台灣ODM/PCB/電子零組件廠'
       evidence_source: qualitative
+  - event: 南電上修觸發ABF載板景氣提前反彈
+    keywords:
+      - 南電
+      - ABF
+      - 載板
+      - 上修
+      - 景氣提前
+      - 資金卡位
+    impact:
+      direction: bullish
+      description: ABF載板龍頭財測上修帶動整體族群估值重評，資金提前卡位景氣復甦轉折
+      sectors:
+        - ABF載板
+      stocks:
+        ABF載板:
+          - '8046'
+          - '3037'
+          - '3189'
+      last_updated_reason: '2026-07-02: 南電(8046)上修財測，資金提前湧入ABF相關載板族群，顯示ABF景氣復甦時序早於市場原先預期（下半年後），構成獨立於AI伺服器需求的載板自主催化事件'
+      evidence_source: qualitative
+  - event: 主動元件漲價Lead Time拉長仿被動元件路徑
+    keywords:
+      - 主動元件
+      - 漲價
+      - lead time
+      - 交期拉長
+      - 缺貨擴散
+    impact:
+      direction: bullish
+      description: 主動元件供需吃緊推動報價與交期同步上行，類被動元件前期路徑，帶動相關台廠毛利率與目標價上修
+      sectors:
+        - 主動元件
+        - 離散半導體
+      stocks:
+        主動元件:
+          - '5425'
+          - '3675'
+          - '8261'
+      last_updated_reason: '2026-07-02: 主動元件漲價趨勢與交期延長明顯，走勢高度仿照稍早被動元件行情路徑，代表漲價題材向主動元件擴散，為獨立於功率半導體缺貨事件的新一波供應鏈題材'
+      evidence_source: qualitative
+  - event: AI科技巨頭現金流惡化股東施壓ROI
+    keywords:
+      - AI大廠
+      - 現金流
+      - 資本支出
+      - ROI
+      - 股東施壓
+      - capex縮減
+    impact:
+      direction: bearish
+      description: AI大廠現金流惡化使股東質疑資本支出回報率，潛在capex縮減壓力傳導至台灣AI伺服器與封測供應鏈
+      sectors:
+        - AI伺服器
+        - 先進封裝
+        - 資料中心
+      stocks: {}
+      last_updated_reason: '2026-07-02: 承擔AI基礎建設費用的科技巨頭股價走弱、現金流逼近負值，股東開始施壓資本支出回報，若縮減capex計畫將形成台灣AI基礎建設供應鏈的系統性下行風險，與現有規則的需求爆發方向相反'
+      evidence_source: qualitative
