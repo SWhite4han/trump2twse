@@ -1386,3 +1386,25 @@
       stocks: {}
       last_updated_reason: '2026-07-02: 承擔AI基礎建設費用的科技巨頭股價走弱、現金流逼近負值，股東開始施壓資本支出回報，若縮減capex計畫將形成台灣AI基礎建設供應鏈的系統性下行風險，與現有規則的需求爆發方向相反'
       evidence_source: qualitative
+  - event: IC設計股需求驅動漲價全面補漲
+    keywords:
+      - IC設計
+      - 需求導向漲價
+      - 聯發科
+      - 創意
+      - 世芯
+      - 補漲
+      - 定價權
+      - 輪動
+    impact:
+      direction: bullish
+      description: 需求驅動定價權使IC設計廠毛利率預期上修，觸發資金從被動元件輪動流入，帶動族群全面轉強
+      sectors:
+        - IC設計
+      stocks:
+        IC設計:
+          - '2454'
+          - '3443'
+          - '3661'
+      last_updated_reason: '2026-07-05: 聯發科、創意、世芯等IC設計龍頭出現短波段破底回升並站上關鍵均線，晶圓代工漲價背景下IC設計廠取得「需求導向」定價權（非單純成本轉嫁），漲價預期更長遠、股價動能更強，成為被動/功率元件後的新輪動主流族群'
+      evidence_source: qualitative
