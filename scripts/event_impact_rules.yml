@@ -1408,3 +1408,21 @@
           - '3661'
       last_updated_reason: '2026-07-05: 聯發科、創意、世芯等IC設計龍頭出現短波段破底回升並站上關鍵均線，晶圓代工漲價背景下IC設計廠取得「需求導向」定價權（非單純成本轉嫁），漲價預期更長遠、股價動能更強，成為被動/功率元件後的新輪動主流族群'
       evidence_source: qualitative
+  - event: AI伺服器供應鏈需求外溢T2/T3廠商補漲
+    keywords:
+      - T2
+      - T3
+      - 供應商外溢
+      - AI大廠挪移產能
+      - 次波補漲
+      - 中小型供應商
+    impact:
+      direction: bullish
+      description: AI伺服器一線供應商滿載後，訂單外溢至二三線零組件與封裝廠，帶動原本未受關注的中小型供應商訂單與股價補漲
+      sectors:
+        - passive_components_tier2
+        - power_components_tier2
+        - packaging_tier2
+      stocks: {}
+      last_updated_reason: '2026-07-06: EP675明確點出AI大廠產能挪移後，訂單開始外溢至T2/T3供應商，與現有規則聚焦一線廠商漲價或通路庫存升值不同，屬於次波受益族群辨識的新機制'
+      evidence_source: qualitative
