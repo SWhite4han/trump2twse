@@ -1426,3 +1426,41 @@
       stocks: {}
       last_updated_reason: '2026-07-06: EP675明確點出AI大廠產能挪移後，訂單開始外溢至T2/T3供應商，與現有規則聚焦一線廠商漲價或通路庫存升值不同，屬於次波受益族群辨識的新機制'
       evidence_source: qualitative
+  - event: 800V AI伺服器BBU強制化推升需求
+    keywords:
+      - BBU
+      - 800V
+      - AI伺服器
+      - 電池備援
+      - 選配轉標配
+      - 白皮書
+    impact:
+      direction: bullish
+      description: BBU由選配轉標配開啟全新必備需求池，直接帶動電池備援模組製造商量價齊升
+      sectors:
+        - power_supply
+        - battery_backup
+      stocks:
+        power_supply:
+          - '2455'
+          - '2308'
+      last_updated_reason: '2026-08-16: EP688白皮書指出BBU原為選配，但隨AI伺服器功耗持續攀升將可能轉為強制配置，形成獨立於現有Power
+        Rack規則之外的全新需求增量，BBU廠商出貨量有望結構性升格'
+      evidence_source: qualitative
+  - event: Trump學名藥200%關稅重塑製藥供應鏈
+    keywords:
+      - 學名藥
+      - 200%關稅
+      - API
+      - 製藥供應鏈
+      - 印度製藥替代
+    impact:
+      direction: bullish
+      description: 200%關稅逼迫美藥商繞開印度尋找替代供應鏈，台灣API與學名藥廠商具轉單替代潛力
+      sectors:
+        - pharmaceuticals
+      stocks:
+        pharmaceuticals:
+          - '4119'
+      last_updated_reason: '2026-08-16: 美國規劃對學名藥課徵200%關稅，印度供應佔美國學名藥約40%，極端關稅若實施將強迫製藥採購商尋求替代產地，台灣原料藥及學名藥廠具潛在轉單受益機會，與現有規則庫中無任何製藥類事件重疊'
+      evidence_source: qualitative
