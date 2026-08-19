@@ -1464,3 +1464,66 @@
           - '4119'
       last_updated_reason: '2026-08-16: 美國規劃對學名藥課徵200%關稅，印度供應佔美國學名藥約40%，極端關稅若實施將強迫製藥採購商尋求替代產地，台灣原料藥及學名藥廠具潛在轉單受益機會，與現有規則庫中無任何製藥類事件重疊'
       evidence_source: qualitative
+  - event: Trump對關鍵晶片材料徵15%關稅
+    keywords:
+      - 晶片材料
+      - 15%關稅
+      - 鎵
+      - 鍺
+      - 對抗中國
+      - 材料制裁
+      - 半導體原料
+    impact:
+      direction: mixed
+      description: 中國主導的鎵、鍺等關鍵晶片材料受15%關稅衝擊，仰賴進口廠商成本上升，替代材料或本土供應商受惠，整體供應鏈重組加速
+      sectors:
+        - semiconductor_materials
+        - specialty_chemicals
+      stocks:
+        semiconductor_materials: []
+        specialty_chemicals: []
+      last_updated_reason: '2026-08-19: BBC明確報導Trump以對抗中國為由對特定關鍵晶片材料課徵15%關稅，屬材料層級制裁，有別於現有規則庫聚焦設備/晶片出口管制，將推升依賴中國來源材料之半導體廠商成本，並加速替代材料供應鏈重組'
+      evidence_source: qualitative
+  - event: 美沙核濃縮協議帶動全球核電供應鏈
+    keywords:
+      - 沙烏地阿拉伯
+      - 核濃縮
+      - 鈾
+      - 123協議
+      - 核電合作
+      - 核能供應鏈
+      - 中東核電
+    impact:
+      direction: bullish
+      description: 美沙核能合作協議確立，帶動中東核電工程採購需求，利多核電相關電力設備與特殊材料供應商
+      sectors:
+        - nuclear_energy
+        - electrical_equipment
+        - special_alloys
+      stocks:
+        electrical_equipment: []
+        special_alloys: []
+      last_updated_reason: '2026-08-19: Guardian報導美沙達成鈾濃縮協議，NYT同步解析美國核能合作框架（123協議），兩篇相互佐證，顯示中東核電建設正式啟動，全球核能設備、特殊合金、電力基礎設施需求潛在受惠，現有規則庫無核能相關事件'
+      evidence_source: qualitative
+  - event: Liberation Day關稅百億退款降低供應鏈風險溢價
+    keywords:
+      - Liberation Day
+      - 關稅退款
+      - 百億退稅
+      - 解放日關稅
+      - 貿易風險降溫
+      - 供應鏈成本
+    impact:
+      direction: bullish
+      description: 百億美元退款執行確認關稅壁壘部分鬆動，全球供應鏈成本壓力緩解，出口導向台廠獲益空間擴大
+      sectors:
+        - EMS
+        - ODM
+        - electronics_manufacturing
+      stocks:
+        EMS:
+          - '2317'
+        ODM:
+          - '2382'
+      last_updated_reason: '2026-08-19: BBC報導Trump政府實際退還逾百億美元解放日關稅給企業，此為關稅實質鬆動的具體資金訊號，有別於現有規則庫側重法律不確定性延長，退款執行代表貿易摩擦風險溢價具體下降，利多出口導向台廠估值修復'
+      evidence_source: qualitative
