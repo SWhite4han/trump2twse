@@ -1527,3 +1527,40 @@
           - '2382'
       last_updated_reason: '2026-08-19: BBC報導Trump政府實際退還逾百億美元解放日關稅給企業，此為關稅實質鬆動的具體資金訊號，有別於現有規則庫側重法律不確定性延長，退款執行代表貿易摩擦風險溢價具體下降，利多出口導向台廠估值修復'
       evidence_source: qualitative
+  - event: AI資本支出3兆表外隱性槓桿風險
+    keywords:
+      - AI表外債務
+      - 3兆美元
+      - 隱藏槓桿
+      - 資料中心債券
+      - 泡沫信號
+    impact:
+      direction: bearish
+      description: AI資本支出表外槓桿曝光後市場敘事由供應鏈利多轉泡沫風險，壓縮AI題材股PE乘數
+      sectors:
+        - AI伺服器
+        - 半導體
+        - 散熱電源
+      stocks:
+        半導體:
+          - '2330'
+      last_updated_reason: '2026-08-21: WSJ揭露大科技AI實際支出高出帳面3兆美元（表外租賃/合約義務），股癌EP689指出一旦此類債務被打包成散戶可購買的資料中心債券，即為泡沫破裂前兆；此風險敘事與現有規則庫「AI科技巨頭現金流惡化股東施壓ROI」機制不同，聚焦系統性隱性槓桿而非單一公司ROI壓力，可能觸發AI供應鏈估值集體壓縮'
+      evidence_source: qualitative
+  - event: Trump對中太陽能貿易制裁台廠替代受益
+    keywords:
+      - 太陽能
+      - Trump貿易制裁
+      - 中國競爭
+      - 台廠替代
+      - 關稅
+    impact:
+      direction: bullish
+      description: 中國太陽能受美制裁，台廠作為替代供應鏈受益，訂單與ASP雙升帶動估值修復
+      sectors:
+        - 太陽能
+      stocks:
+        太陽能:
+          - '3576'
+          - '6244'
+      last_updated_reason: '2026-08-21: Reuters報導Trump宣布對抗中國太陽能的貿易行動（與晶片制裁並列），現有規則庫涵蓋晶片與半導體相關制裁但未涵蓋太陽能；若中國太陽能產品受關稅或制裁限制，台灣太陽能電池廠有望作為非中國替代供應商承接美國市場訂單'
+      evidence_source: qualitative
