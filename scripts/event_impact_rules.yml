@@ -1564,3 +1564,29 @@
           - '6244'
       last_updated_reason: '2026-08-21: Reuters報導Trump宣布對抗中國太陽能的貿易行動（與晶片制裁並列），現有規則庫涵蓋晶片與半導體相關制裁但未涵蓋太陽能；若中國太陽能產品受關稅或制裁限制，台灣太陽能電池廠有望作為非中國替代供應商承接美國市場訂單'
       evidence_source: qualitative
+  - event: Marvell-Google TPU周邊晶片全面商業協議
+    keywords:
+      - Marvell
+      - Google
+      - TPU
+      - AI Inference Chip
+      - Memory Controller
+      - NIC
+      - Near Compute
+      - 客製化半導體
+    impact:
+      direction: bullish
+      description: Marvell承包Google TPU周邊晶片設計與供應，直接拉升台積電先進製程訂單及CoWoS/先進封裝需求
+      sectors:
+        - foundry
+        - advanced_packaging
+        - ai_chips
+      stocks:
+        foundry:
+          - '2330'
+        advanced_packaging:
+          - '3711'
+      last_updated_reason: '2026-08-23: EP690明確指出Marvell與Google就TPU生態系非主晶片部分（AI Inference
+        Chip、Memory Controller、NIC、Near Compute）達成商業合作協議，涵蓋範圍廣且具體，與現有規則庫中僅涉及聯發科的Google
+        TPU規則性質不同，Marvell晶片主要由台積電先進製程代工，可帶動台積電及先進封裝供應鏈需求'
+      evidence_source: qualitative
