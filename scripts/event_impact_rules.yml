@@ -1590,3 +1590,38 @@
         Chip、Memory Controller、NIC、Near Compute）達成商業合作協議，涵蓋範圍廣且具體，與現有規則庫中僅涉及聯發科的Google
         TPU規則性質不同，Marvell晶片主要由台積電先進製程代工，可帶動台積電及先進封裝供應鏈需求'
       evidence_source: qualitative
+  - event: Trump新法源繞過法院重啟全球關稅
+    keywords:
+      - new legal authority
+      - global tariffs
+      - court bypass
+      - IEEPA替代
+      - supply chain uncertainty
+    impact:
+      direction: bearish
+      description: 關稅法律戰新局面使供應鏈重組壓力延長，出口導向台廠匯率風險溢價與訂單能見度持續受壓
+      sectors:
+        - semiconductor
+        - electronics
+        - supply_chain
+      stocks: {}
+      last_updated_reason: '2026-08-27: Trump以全新法律授權重啟全球關稅，與既有IEEPA司法封鎖路徑不同，代表關稅法律戰進入新回合——即使法院再封鎖，行政部門仍可找替代法源，持續拉長供應鏈不確定期'
+      evidence_source: qualitative
+  - event: 美法院允終止小額包裹豁免衝擊跨境電商
+    keywords:
+      - de minimis
+      - small parcels
+      - tariff exemption
+      - Temu
+      - Shein
+      - 跨境電商
+    impact:
+      direction: bearish
+      description: 跨境電商低成本模式受衝擊，依賴陸系電商平台訂單的台灣包材與物流相關供應商訂單能見度下滑
+      sectors:
+        - logistics
+        - packaging
+        - e-commerce_supply_chain
+      stocks: {}
+      last_updated_reason: '2026-08-27: 法院裁定Trump可終止800美元以下包裹免關稅（de minimis）規定，直接瓦解Temu/Shein低成本跨境模式，影響台灣包材、倉儲與電商物流供應商接單結構'
+      evidence_source: qualitative
