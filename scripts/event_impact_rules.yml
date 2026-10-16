@@ -646,7 +646,7 @@
       - 投資回本
     horizon: cycle
     impact:
-      direction: bullish
+      direction: mixed
       description: AI硬體投資下行風險被租賃模式托底，採購方對伺服器/基礎建設投資意願提升，利好台灣AI伺服器組裝與CoWoS先進封裝供應鏈
       sectors:
         - ai_server
@@ -658,8 +658,8 @@
           - '6669'
         advanced_packaging:
           - '2330'
-      last_updated_reason: '2026-05-25: EP664明確指出馬斯克Grok發展不如預期後轉租Colossus算力，鉅額投資可在1-2年內回本，確立「AI模型失敗仍可靠硬體租賃變現」新商業模式。此事件與已有規則「Anthropic首度轉獲利」機制不同：Anthropic驗證AI模型盈利，本事件驗證硬體資產本身的租賃安全邊際，為AI硬體投資提供下行保護，進一步強化買硬體意願'
-      evidence_source: qualitative
+      last_updated_reason: '2026-10-16: 20261015 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: AI伺服器電源模組推升高壓MLCC瓶頸缺口
     keywords:
       - 高壓MLCC
