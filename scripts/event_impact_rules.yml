@@ -613,8 +613,9 @@
           - '3711'
           - '6239'
           - '2328'
-      last_updated_reason: '2026-05-24: 節目明確點名包產能浪潮將從記憶體、晶圓代工、光通擴散至OSAT封測，封測廠成下一個供需瓶頸與漲價候選'
-      evidence_source: qualitative
+      last_updated_reason: '2026-10-22: 累積達標率 80%（5 筆），調整信心門檻 0.40 → 0.30'
+      evidence_source: quant
+    min_confidence: 0.3
   - event: Google-Blackstone TPU雲端解鎖第三方算力市場
     keywords:
       - Google TPU
