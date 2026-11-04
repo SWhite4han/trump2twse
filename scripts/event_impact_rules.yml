@@ -1357,7 +1357,7 @@
       - 交期拉長
       - 缺貨擴散
     impact:
-      direction: bullish
+      direction: mixed
       description: 主動元件供需吃緊推動報價與交期同步上行，類被動元件前期路徑，帶動相關台廠毛利率與目標價上修
       sectors:
         - 主動元件
@@ -1367,8 +1367,8 @@
           - '5425'
           - '3675'
           - '8261'
-      last_updated_reason: '2026-07-02: 主動元件漲價趨勢與交期延長明顯，走勢高度仿照稍早被動元件行情路徑，代表漲價題材向主動元件擴散，為獨立於功率半導體缺貨事件的新一波供應鏈題材'
-      evidence_source: qualitative
+      last_updated_reason: '2026-11-04: 20261103 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: AI科技巨頭現金流惡化股東施壓ROI
     keywords:
       - AI大廠
