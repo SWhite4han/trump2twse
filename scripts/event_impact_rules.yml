@@ -1367,8 +1367,9 @@
           - '5425'
           - '3675'
           - '8261'
-      last_updated_reason: '2026-11-04: 20261103 績效：停損率 100%（2/2 筆）'
+      last_updated_reason: '2026-11-04: 累積達標率 20%（1/5 筆），低於 25% 閾值'
       evidence_source: quant
+    disabled: true
   - event: AI科技巨頭現金流惡化股東施壓ROI
     keywords:
       - AI大廠
