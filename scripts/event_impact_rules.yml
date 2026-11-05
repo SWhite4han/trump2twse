@@ -965,7 +965,7 @@
       - 目標價
     horizon: cycle
     impact:
-      direction: bullish
+      direction: mixed
       description: 2018超級循環毛利率作為估值天花板參考，帶動被動元件廠EPS目標大幅上修，誘發機構買盤
       sectors:
         - passive_components
@@ -974,8 +974,8 @@
           - '2327'
           - '2492'
           - '3026'
-      last_updated_reason: '2026-06-03: EP665以2018年國巨毛利率6X%為類比上限，搭配B/B ratio上拉（特規品稼動90%、標準品80%），市場開始以2018超級循環框架重新試算EPS與目標價，觸發分析師調升評等與資金進場'
-      evidence_source: qualitative
+      last_updated_reason: '2026-11-05: 20261104 績效：停損率 100%（2/2 筆）'
+      evidence_source: quant
   - event: AI PC地端推論商業化帶動筆電OEM題材重估
     keywords:
       - AI PC
