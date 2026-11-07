@@ -974,8 +974,9 @@
           - '2327'
           - '2492'
           - '3026'
-      last_updated_reason: '2026-11-05: 20261104 績效：停損率 100%（2/2 筆）'
+      last_updated_reason: '2026-11-07: 累積達標率 20%（1/5 筆），低於 25% 閾值'
       evidence_source: quant
+    disabled: true
   - event: AI PC地端推論商業化帶動筆電OEM題材重估
     keywords:
       - AI PC
